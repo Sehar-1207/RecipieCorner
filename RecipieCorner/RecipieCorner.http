@@ -1,6 +1,6 @@
-@RecipieCorner_HostAddress = http://localhost:5299
+@RecipeCorner_HostAddress = http://localhost:5299
 
-GET {{RecipieCorner_HostAddress}}/weatherforecast/
+GET {{RecipeCorner_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###

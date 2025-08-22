@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using RecipieCorner.Models;
+using RecipeCorner.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace RecipieCorner.Services
+namespace RecipeCorner.Services
 {
     public class JwtTokenService
     {

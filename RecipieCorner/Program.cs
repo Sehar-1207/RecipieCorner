@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using RecipieCorner.Data;
-using RecipieCorner.Models;
-using RecipieCorner.Services;
+using RecipeCorner.Data;
+using RecipeCorner.Interfaces;
+using RecipeCorner.Models;
+using RecipeCorner.Repositories;
+using RecipeCorner.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<IUnitOfWork, UnitOfWorkRepo>();
 // Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(opt =>
 {
@@ -52,26 +54,8 @@ builder.Services.AddAuthentication(opt =>
 
 builder.Services.AddAuthorization();
 
-// Swagger + JWT support
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "RecipeBook API", Version = "v1" });
-    var jwtScheme = new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter: Bearer {your token}"
-    };
-    c.AddSecurityDefinition("Bearer", jwtScheme);
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        { jwtScheme, Array.Empty<string>() }
-    });
-});
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddControllers();
 builder.Services.AddCors(opt =>

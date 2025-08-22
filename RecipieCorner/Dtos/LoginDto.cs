@@ -1,4 +1,4 @@
-﻿namespace RecipieCorner.Dtos
+﻿namespace RecipeCorner.Dtos
 {
     public class LoginDto
     {

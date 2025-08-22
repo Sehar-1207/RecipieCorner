@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace RecipieCorner.Migrations
+namespace RecipeCorner.Migrations
 {
     /// <inheritdoc />
     public partial class AddingAuth : Migration

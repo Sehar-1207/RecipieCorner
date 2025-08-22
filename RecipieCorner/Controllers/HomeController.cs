@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace RecipieCorner.Controllers
+namespace RecipeCorner.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

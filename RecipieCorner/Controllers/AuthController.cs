@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using RecipieCorner.Dtos;
-using RecipieCorner.Models;
-using RecipieCorner.Services;
+using RecipeCorner.Dtos;
+using RecipeCorner.Models;
+using RecipeCorner.Services;
 
-namespace RecipieCorner.Controllers
+namespace RecipeCorner.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -15,30 +15,56 @@ namespace RecipieCorner.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly JwtTokenService _jwt;
         private readonly IConfiguration _config;
+        private readonly IWebHostEnvironment _env;
 
         public AuthController(UserManager<ApplicationUser> userManager,
                               RoleManager<IdentityRole> roleManager,
                               JwtTokenService jwt,
-                              IConfiguration config)
+                              IConfiguration config,
+                              IWebHostEnvironment env)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _jwt = jwt;
             _config = config;
+            _env = env;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<IActionResult> Register([FromForm] RegisterDto dto)
         {
-            var user = new ApplicationUser { UserName = dto.Email, Email = dto.Email, FullName = dto.FullName };
-            var result = await _userManager.CreateAsync(user, dto.Password);
+            var user = new ApplicationUser
+            {
+                UserName = dto.Email,
+                Email = dto.Email,
+                FullName = dto.FullName
+            };
 
+            // Handle profile image upload
+            if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
+            {
+                var uploads = Path.Combine(_env.WebRootPath, "uploads");
+                if (!Directory.Exists(uploads))
+                    Directory.CreateDirectory(uploads);
+
+                var fileName = Guid.NewGuid() + Path.GetExtension(dto.ProfileImage.FileName);
+                var filePath = Path.Combine(uploads, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await dto.ProfileImage.CopyToAsync(stream);
+                }
+
+                user.ProfileImageUrl = $"/uploads/{fileName}";
+            }
+
+            var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded) return BadRequest(result.Errors);
 
             // Ensure roles exist
             await EnsureRolesExistAsync("User", "Admin");
 
-            // Assign role based on secret code
+            // Assign role
             var adminSecret = _config["AdminSecretCode"];
             if (!string.IsNullOrEmpty(dto.SecretKey) && dto.SecretKey == adminSecret)
                 await _userManager.AddToRoleAsync(user, "Admin");
@@ -55,11 +81,17 @@ namespace RecipieCorner.Controllers
 
             var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!));
 
-            return Ok(new TokenDto
+            return Ok(new
             {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                ExpiresAt = expiresAt
+                Token = new TokenDto
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    ExpiresAt = expiresAt
+                },
+                user.FullName,
+                user.Email,
+                user.ProfileImageUrl
             });
         }
 
@@ -81,11 +113,17 @@ namespace RecipieCorner.Controllers
 
             var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!));
 
-            return Ok(new TokenDto
+            return Ok(new
             {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                ExpiresAt = expiresAt
+                Token = new TokenDto
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    ExpiresAt = expiresAt
+                },
+                user.FullName,
+                user.Email,
+                user.ProfileImageUrl
             });
         }
 
@@ -105,11 +143,17 @@ namespace RecipieCorner.Controllers
 
             var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!));
 
-            return Ok(new TokenDto
+            return Ok(new
             {
-                AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken,
-                ExpiresAt = expiresAt
+                Token = new TokenDto
+                {
+                    AccessToken = newAccessToken,
+                    RefreshToken = newRefreshToken,
+                    ExpiresAt = expiresAt
+                },
+                user.FullName,
+                user.Email,
+                user.ProfileImageUrl
             });
         }
 
