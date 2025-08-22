@@ -1,0 +1,243 @@
+﻿@model LoginResponseDto // <-- The only change is here!
+@{
+    Layout = null;
+    ViewData["Title"] = "Login";
+}
+
+    <style>
+/* --- CSS Reset & Basic Setup --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 80%;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7f6;
+}
+
+/* --- Main Container --- */
+.login-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* --- Left Panel: Illustration --- */
+.illustration-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+}
+
+    .illustration-panel img {
+        max-width: 50%;
+        height: auto;
+        object-fit: contain;
+    }
+
+/* --- Right Panel: Login Form --- */
+.form-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    /* The Deep Sea Nebula Gradient */
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+}
+
+    /* Optional: Add a subtle circular glow for effect */
+    .form-panel::after {
+        content: '';
+        position: absolute;
+        bottom: -15%;
+        right: -15%;
+        width: 70%;
+        height: 70%;
+        background: radial-gradient(circle, rgba(46, 75, 137, 0.2) 0%, rgba(46, 75, 137, 0) 70%);
+        border-radius: 50%;
+    }
+
+/* --- Login Box --- */
+.login-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px 35px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    z-index: 1;
+}
+
+    .login-box h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    .login-box p {
+        font-size: 1rem;
+        color: #6c757d;
+        margin-bottom: 30px;
+    }
+
+/* --- Input Fields with Icons --- */
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+    .input-group i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+        font-size: 1.1rem;
+    }
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px 12px 45px; /* Left padding for icon */
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .form-control:focus {
+        outline: none;
+        border-color: #4a69bd;
+        box-shadow: 0 0 0 3px rgba(74, 105, 189, 0.2);
+    }
+
+.text-danger {
+    color: #dc3545;
+    font-size: 0.875em;
+    text-align: left;
+    display: block;
+    margin-top: 5px;
+}
+
+/* --- Button and Links --- */
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: #4a69bd;
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+    .login-btn:hover {
+        background-color: #3b569a;
+        transform: translateY(-2px);
+    }
+
+    .login-btn:active {
+        transform: translateY(0);
+    }
+
+.forgot-password {
+    display: block;
+    margin-top: 20px;
+    text-align: center;
+    text-decoration: none;
+    color: #4a69bd;
+    font-weight: 500;
+}
+
+    .forgot-password:hover {
+        text-decoration: underline;
+    }
+
+/* --- Responsive Design --- */
+@@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+    }
+
+    .illustration-panel {
+        display: none; /* Hide the illustration on small screens */
+    }
+
+    .form-panel {
+        flex: 1; /* Take full height */
+    }
+
+    .login-box {
+        margin: 0 20px;
+    }
+}
+</style>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+       <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- ... all the <head> content (CSS, fonts) from the previous answer ... -->
+    <style>
+/* ... all the <style> content from the previous answer ... */
+</style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Side: Illustration -->
+        <div class="illustration-panel">
+            <img src="~/Images/student-avatar.jpg" alt="Illustration of a person working on a computer">
+        </div>
+
+        <!-- Right Side: Login Form -->
+        <div class="form-panel">
+            <div class="login-box">
+                <h1>Hello!</h1>
+                <p>Sign In to Get Started</p>
+
+                <form asp-controller="Auth" asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <!-- This div will display the "Invalid email or password" error -->
+                    <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom: 15px;"></div>
+
+                    <!-- Email Input -->
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input asp-for="Email" class="form-control" placeholder="Email Address" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger"></span>
+
+                    <!-- Password Input -->
+                    <div class="input-group" style="margin-top: 20px;">
+                        <i class="fas fa-lock"></i>
+                        <input asp-for="Password" class="form-control" placeholder="Password" />
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+
+                    <!-- Login Button -->
+                    <button type="submit" class="login-btn">Login</button>
+
+                    <!-- Forgot Password Link -->
+                    <a href="#" class="forgot-password">Forgot Password?</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

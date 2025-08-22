@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeCorner", "RecipieCorner\RecipeCorner.csproj", "{65E05D45-6943-4B0E-926D-F0BEFDB90303}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodSecrets", "FoodSecrets\FoodSecrets.csproj", "{BF3C6DAB-24C3-439A-B6AF-917DBECBA79E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{65E05D45-6943-4B0E-926D-F0BEFDB90303}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65E05D45-6943-4B0E-926D-F0BEFDB90303}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65E05D45-6943-4B0E-926D-F0BEFDB90303}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF3C6DAB-24C3-439A-B6AF-917DBECBA79E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF3C6DAB-24C3-439A-B6AF-917DBECBA79E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF3C6DAB-24C3-439A-B6AF-917DBECBA79E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF3C6DAB-24C3-439A-B6AF-917DBECBA79E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
