@@ -4,41 +4,46 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient("Api", client =>
+
+// Configure HttpClient for API access
+builder.Services.AddHttpClient<IAuthAccountService, AuthAccountService>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7230/api/"); // 👈 replace with your API URL
+    client.BaseAddress = new Uri("https://localhost:7230/"); // API base URL
 });
+
+// Example of other service
 builder.Services.AddScoped<IRecipe, RecipeService>();
-// Add this to your Program.cs file
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddDistributedMemoryCache(); // Required for in-memory session provider
+
+// Add session support
+builder.Services.AddDistributedMemoryCache(); // Required for session
 builder.Services.AddSession(options =>
 {
-    // Set a short timeout for easy testing.
-    options.IdleTimeout = TimeSpan.FromMinutes(20);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromMinutes(20); // Session timeout
+    options.Cookie.HttpOnly = true; // Prevent JavaScript access
+    options.Cookie.IsEssential = true; // Required for GDPR compliance
 });
 
+// Build the app
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseCors();
+
 app.UseRouting();
+
+// ✅ Session middleware must come before Authorization
+app.UseSession();
 
 app.UseAuthorization();
 
-
-
+// Default route
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

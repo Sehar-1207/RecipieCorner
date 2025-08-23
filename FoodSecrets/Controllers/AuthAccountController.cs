@@ -3,11 +3,11 @@ using RecipeCorner.Dtos;
 
 namespace FoodSecrets.Controllers
 {
-    public class AuthController : Controller
+    public class AuthAccountController : Controller
     {
-        private readonly IAuthService _authService;
+        private readonly IAuthAccountService _authService;
 
-        public AuthController(IAuthService authService)
+        public AuthAccountController(IAuthAccountService authService)
         {
             _authService = authService;
         }
@@ -47,7 +47,7 @@ namespace FoodSecrets.Controllers
             return View();
         }
 
-        // POST: /Account/Login
+        // POST: /Auth/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginDto dto)
@@ -55,10 +55,11 @@ namespace FoodSecrets.Controllers
             if (!ModelState.IsValid)
                 return View(dto);
 
+            // Call AuthService → API validates email & password
             var result = await _authService.LoginAsync(dto);
             if (result == null)
             {
-                ModelState.AddModelError("", "Invalid credentials");
+                ModelState.AddModelError("", "Invalid email or password");
                 return View(dto);
             }
 
@@ -69,6 +70,7 @@ namespace FoodSecrets.Controllers
             TempData["Message"] = $"Welcome, {result.FullName}!";
             return RedirectToAction("Index", "Home");
         }
+
 
         // Optional: Logout
         public IActionResult Logout()

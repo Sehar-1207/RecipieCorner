@@ -33,45 +33,46 @@ namespace RecipeCorner.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromForm] RegisterDto dto)
         {
+
+            //// ✅ Handle profile image with helper
+            //if (dto.ProfileImage != null)
+            //{
+            //    try
+            //    {
+            //        user.ProfileImageUrl = await UploadFilet(dto.ProfileImage);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        return BadRequest(ex.Message);
+            //    }
+            //}
+
+            var profileImageUrl = dto.ProfileImage != null
+    ? await UploadFilet(dto.ProfileImage)
+    : null;
+
             var user = new ApplicationUser
             {
                 UserName = dto.Email,
                 Email = dto.Email,
-                FullName = dto.FullName
+                FullName = dto.FullName,
+                ProfileImageUrl = profileImageUrl
             };
-
-            // Handle profile image upload
-            if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
-            {
-                var uploads = Path.Combine(_env.WebRootPath, "uploads");
-                if (!Directory.Exists(uploads))
-                    Directory.CreateDirectory(uploads);
-
-                var fileName = Guid.NewGuid() + Path.GetExtension(dto.ProfileImage.FileName);
-                var filePath = Path.Combine(uploads, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await dto.ProfileImage.CopyToAsync(stream);
-                }
-
-                user.ProfileImageUrl = $"/uploads/{fileName}";
-            }
 
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded) return BadRequest(result.Errors);
 
-            // Ensure roles exist
+            // ✅ Ensure roles
             await EnsureRolesExistAsync("User", "Admin");
 
-            // Assign role
+            // ✅ Assign role
             var adminSecret = _config["AdminSecretCode"];
             if (!string.IsNullOrEmpty(dto.SecretKey) && dto.SecretKey == adminSecret)
                 await _userManager.AddToRoleAsync(user, "Admin");
             else
                 await _userManager.AddToRoleAsync(user, "User");
 
-            // Generate tokens
+            // ✅ Generate tokens
             var accessToken = await _jwt.CreateAccessTokenAsync(user);
             var refreshToken = _jwt.GenerateRefreshToken();
 
@@ -93,6 +94,42 @@ namespace RecipeCorner.Controllers
                 user.Email,
                 user.ProfileImageUrl
             });
+        }
+
+
+        // ✅ Upload helper function
+        private async Task<string> UploadFilet(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File is empty");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var extension = Path.GetExtension(file.FileName).ToLower();
+
+            if (!allowedExtensions.Contains(extension))
+                throw new ArgumentException("Invalid file type. Only jpg, jpeg, png, gif are allowed.");
+
+            long maxSize = 2 * 1024 * 1024; // 2 MB
+            if (file.Length > maxSize)
+                throw new ArgumentException("File size cannot exceed 2 MB.");
+
+            // ✅ Make sure WebRootPath is not null
+            var rootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+
+            var uploadsFolder = Path.Combine(rootPath, "uploads");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = Guid.NewGuid() + extension;
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // This will be accessible like: https://localhost:5001/uploads/filename.png
+            return $"/uploads/{fileName}";
         }
 
         [HttpPost("login")]

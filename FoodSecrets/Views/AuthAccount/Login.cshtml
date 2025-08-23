@@ -1,0 +1,114 @@
+﻿@model RecipeCorner.Dtos.LoginDto
+
+@{
+    ViewData["Title"] = "Log In";
+    Layout = "~/Views/Shared/_LoginLayout.cshtml";
+}
+
+<!-- Custom CSS for the background and card layout -->
+<style>
+    body {
+        background-color: #f0f2f5;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+        padding: 2rem 0;
+    }
+
+    .card.shadow-lg {
+        border: none;
+        border-radius: 1rem;
+        height: 100%;
+
+    }
+    .textcol{
+        color: #a012eb;
+    }
+    /* New class specifically for the image on the left */
+    .card-img-left {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-top-left-radius: 1rem;
+        border-bottom-left-radius: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #be53f8;
+        transition: transform 0.2s ease;
+        border: none;
+    }
+
+        .btn-primary:hover {
+            background-color: #50007a;
+            transform:  translateY(-1px);;
+        }
+</style>
+
+<div class="container card-container mt-5">
+    <div class="col-lg-11 col-xl-10">
+        <div class="card shadow-lg">
+            <div class="row g-0">
+
+                <!-- Column 1: Image (now on the left) -->
+                <div class="col-md-6 d-none d-md-block">
+                    <!-- Using a different illustration for variety -->
+                    <img src="https://cdni.iconscout.com/illustration/premium/thumb/login-3305943-2757111.png"
+                         alt="Login Illustration"
+                         class="card-img-left" />
+                </div>
+
+                <!-- Column 2: Login Form -->
+                <div class="col-md-6">
+                    <div class="card-body p-4 p-md-5">
+
+                        <h2 class="fw-bold mb-2 textcol">Welcome Back!</h2>
+                        <p class="text-muted mb-4">Log in to your account to continue.</p>
+
+                        <form asp-action="Login" asp-controller="AuthAccount" method="post">
+
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                            <div class="form-group mb-3">
+                                <label asp-for="Email" class="form-label fw-semibold"></label>
+                                <input asp-for="Email" class="form-control" placeholder="name@example.com" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <label asp-for="Password" class="form-label fw-semibold"></label>
+                                <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" />
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">Log In</button>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="text-center">
+                                <p class="mb-0 textcol">Don't have an account? <a asp-action="Register" asp-controller="AuthAccount" class="fw-bold text-info text-decoration-none">Sign Up</a></p>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
