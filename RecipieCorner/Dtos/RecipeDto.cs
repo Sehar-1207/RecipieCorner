@@ -16,9 +16,7 @@ public class RecipeDto
 
     [Required]
     public string MealType { get; set; }
-
-    [DataType(DataType.Time)]
-    public DateTime AstimatedCokkingTime { get; set; }
-
+    [Required]
+    public TimeSpan AstimatedCookingTime { get; set; }
     public string? ImageUrl { get; set; }
 }

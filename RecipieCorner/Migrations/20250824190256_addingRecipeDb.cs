@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace RecipeCorner.Migrations
 {
     /// <inheritdoc />
-    public partial class addingdbRecipieBook : Migration
+    public partial class addingRecipeDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,6 +31,7 @@ namespace RecipeCorner.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RefreshTokenExpiryTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ProfileImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -64,7 +65,7 @@ namespace RecipeCorner.Migrations
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Cusine = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     MealType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AstimatedCokkingTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    AstimatedCokkingTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>

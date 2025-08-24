@@ -12,8 +12,8 @@ using RecipeCorner.Data;
 namespace RecipeCorner.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250823044526_addingdbRecipieBook")]
-    partial class addingdbRecipieBook
+    [Migration("20250824190256_addingRecipeDb")]
+    partial class addingRecipeDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -213,6 +213,10 @@ namespace RecipeCorner.Migrations
                     b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -331,8 +335,8 @@ namespace RecipeCorner.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("AstimatedCokkingTime")
-                        .HasColumnType("datetime2");
+                    b.Property<TimeSpan>("AstimatedCokkingTime")
+                        .HasColumnType("time");
 
                     b.Property<string>("Cusine")
                         .IsRequired()

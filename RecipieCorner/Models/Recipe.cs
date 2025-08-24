@@ -19,8 +19,7 @@ namespace RecipeCorner.Models
         [Required]
         public string MealType { get; set; }
 
-        [DataType(DataType.Time)]
-        public DateTime AstimatedCokkingTime { get; set; }
+        public TimeSpan AstimatedCokkingTime { get; set; }
         
         public string? ImageUrl { get; set; }
 

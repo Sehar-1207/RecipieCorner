@@ -1,46 +1,37 @@
 ﻿using FoodSecrets.Models;
 using RecipeCorner.Dtos;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 
 public class AuthAccountService : IAuthAccountService
 {
     private readonly HttpClient _http;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly IHttpContextAccessor _httpContext;
 
-    public AuthAccountService(HttpClient http)
+    public AuthAccountService(IHttpClientFactory httpClientFactory, IConfiguration config, IHttpContextAccessor httpContext)
     {
-        _http = http;
+        _http = httpClientFactory.CreateClient();
+        _http.BaseAddress = new Uri(config["ApiSettings:BaseUrl"]);
         _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        _httpContext = httpContext;
     }
 
     public async Task<RegisterResponseDto?> RegisterAsync(RegisterDto dto)
     {
-        using var content = new MultipartFormDataContent();
-
-        content.Add(new StringContent(dto.FullName), "FullName");
-        content.Add(new StringContent(dto.Email), "Email");
-        content.Add(new StringContent(dto.Password), "Password");
-
-        if (!string.IsNullOrEmpty(dto.SecretKey))
-            content.Add(new StringContent(dto.SecretKey), "SecretKey");
-
-        if (dto.ProfileImage != null)
-        {
-            var stream = dto.ProfileImage.OpenReadStream();
-            content.Add(new StreamContent(stream), "ProfileImage", dto.ProfileImage.FileName);
-        }
-
-        var response = await _http.PostAsync("api/Auth/register", content);
+        var response = await _http.PostAsJsonAsync("api/Auth/register", dto);
 
         if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Register failed: {response.StatusCode} - {error}");
-        }
+            throw new Exception($"Register failed: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
 
-        var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<RegisterResponseDto>(json, _jsonOptions);
+        var result = await response.Content.ReadFromJsonAsync<RegisterResponseDto>(_jsonOptions);
+
+        if (result?.Token != null)
+            SaveTokens(result.Token);
+
+        return result;
     }
 
     public async Task<LoginResponseDto?> LoginAsync(LoginDto dto)
@@ -48,13 +39,14 @@ public class AuthAccountService : IAuthAccountService
         var response = await _http.PostAsJsonAsync("api/Auth/login", dto);
 
         if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Login failed: {response.StatusCode} - {error}");
-        }
+            throw new Exception($"Login failed: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
 
-        var json = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<LoginResponseDto>(json, _jsonOptions);
+        var result = await response.Content.ReadFromJsonAsync<LoginResponseDto>(_jsonOptions);
+
+        if (result?.Token != null)
+            SaveTokens(result.Token);
+
+        return result;
     }
 
     public async Task<TokenResponseDto?> RefreshTokenAsync(string refreshToken)
@@ -62,13 +54,48 @@ public class AuthAccountService : IAuthAccountService
         var response = await _http.PostAsJsonAsync("api/Auth/refresh", new { RefreshToken = refreshToken });
 
         if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Refresh token failed: {response.StatusCode} - {error}");
-        }
+            throw new Exception($"Refresh token failed: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
 
-        var json = await response.Content.ReadAsStringAsync();
-        var wrapper = JsonSerializer.Deserialize<LoginResponseDto>(json, _jsonOptions);
+        var wrapper = await response.Content.ReadFromJsonAsync<LoginResponseDto>(_jsonOptions);
+
+        if (wrapper?.Token != null)
+            SaveTokens(wrapper.Token);
+
         return wrapper?.Token;
+    }
+
+    private void SaveTokens(TokenResponseDto token)
+    {
+        var session = _httpContext.HttpContext!.Session;
+        session.SetString("AccessToken", token.AccessToken);
+        session.SetString("RefreshToken", token.RefreshToken);
+        session.SetString("ExpiresAt", token.ExpiresAt.ToString("o"));
+    }
+
+    public TokenResponseDto? GetSavedTokens()
+    {
+        var session = _httpContext.HttpContext!.Session;
+
+        var accessToken = session.GetString("AccessToken");
+        var refreshToken = session.GetString("RefreshToken");
+        var expiresAtStr = session.GetString("ExpiresAt");
+
+        if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+            return null;
+
+        return new TokenResponseDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresAt = DateTime.Parse(expiresAtStr!)
+        };
+    }
+
+    public void Logout()
+    {
+        var session = _httpContext.HttpContext!.Session;
+        session.Remove("AccessToken");
+        session.Remove("RefreshToken");
+        session.Remove("ExpiresAt");
     }
 }

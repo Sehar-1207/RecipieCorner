@@ -1,0 +1,50 @@
+﻿@model RecipeDto
+@{
+    ViewData["Title"] = "Create Recipe";
+}
+
+<h2>Create Recipe</h2>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Cusine" class="form-label"></label>
+        <input asp-for="Cusine" class="form-control" />
+        <span asp-validation-for="Cusine" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MealType" class="form-label"></label>
+        <input asp-for="MealType" class="form-control" />
+        <span asp-validation-for="MealType" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AstimatedCookingTime" class="form-label"></label>
+        <input asp-for="AstimatedCookingTime" type="time" class="form-control" step="60" />
+        <span asp-validation-for="AstimatedCookingTime" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Recipe Image</label>
+        <input type="file" name="ImageFile" class="form-control" accept="image/*" />
+    </div>
+
+    <button type="submit" class="btn btn-success">Create Recipe</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

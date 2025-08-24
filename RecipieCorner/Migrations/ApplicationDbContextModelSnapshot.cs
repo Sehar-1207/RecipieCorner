@@ -210,6 +210,10 @@ namespace RecipeCorner.Migrations
                     b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -328,8 +332,8 @@ namespace RecipeCorner.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("AstimatedCokkingTime")
-                        .HasColumnType("datetime2");
+                    b.Property<TimeSpan>("AstimatedCokkingTime")
+                        .HasColumnType("time");
 
                     b.Property<string>("Cusine")
                         .IsRequired()

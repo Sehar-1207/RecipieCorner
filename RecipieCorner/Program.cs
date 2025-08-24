@@ -7,6 +7,7 @@ using RecipeCorner.Interfaces;
 using RecipeCorner.Models;
 using RecipeCorner.Repositories;
 using RecipeCorner.Services;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,7 +49,8 @@ builder.Services.AddAuthentication(opt =>
         ValidIssuer = jwt["Issuer"],
         ValidAudience = jwt["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        RoleClaimType = ClaimTypes.Role // ? This is crucial
     };
 });
 

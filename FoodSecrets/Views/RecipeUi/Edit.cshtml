@@ -1,0 +1,62 @@
+﻿@model RecipeDto
+@{
+    ViewData["Title"] = "Edit Recipe";
+}
+
+<h2>Edit Recipe</h2>
+
+<form asp-action="Edit" asp-controller="RecipeUi" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group mb-3">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Cusine"></label>
+        <input asp-for="Cusine" class="form-control" />
+        <span asp-validation-for="Cusine" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="MealType"></label>
+        <input asp-for="MealType" class="form-control" />
+        <span asp-validation-for="MealType" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="AstimatedCookingTime"></label>
+        <input asp-for="AstimatedCookingTime" class="form-control" type="time" />
+        <span asp-validation-for="AstimatedCookingTime" class="text-danger"></span>
+    </div>
+
+    <!-- Show existing image -->
+    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+    {
+        <div class="form-group mb-3">
+            <label>Current Image</label><br />
+            <img src="@Model.ImageUrl" alt="Recipe Image" width="150" class="img-thumbnail mb-2" />
+        </div>
+    }
+
+    <!-- Upload new image -->
+    <div class="form-group mb-3">
+        <label>Upload New Image (optional)</label>
+        <input type="file" name="ImageFile" class="form-control" accept="image/*" />
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Changes</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

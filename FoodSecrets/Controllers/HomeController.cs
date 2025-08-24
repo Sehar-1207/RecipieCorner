@@ -1,4 +1,5 @@
 using FoodSecrets.Models;
+using FoodSecrets.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -7,15 +8,18 @@ namespace FoodSecrets.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IRecipeMvc _recipe;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IRecipeMvc recipe)
         {
             _logger = logger;
+            _recipe = recipe;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var recipes = await _recipe.GetAllAsync();
+            return View(recipes);
         }
 
         public IActionResult Privacy()
