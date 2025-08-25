@@ -105,26 +105,27 @@ body {
     box-sizing: border-box; /* Ensures padding is included in the height */
 }
 
-/* Your existing card styles are fine */
 .recipe-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(3, 1fr); /* exactly 3 per row */
+    gap: 12px; /* spacing between cards */
+    justify-items: center; /* center the fixed-width cards */
 }
 
 .recipe-card {
     background: #fff;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15); /* deeper shadow */
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     display: flex;
     flex-direction: column;
+    width: 350px;
 }
 
     .recipe-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
 
 .card-img-top {

@@ -1,25 +1,122 @@
 ﻿@model IngredientDto
 @{
     ViewData["Title"] = "Delete Ingredient";
+    Layout = "~/Views/Shared/_FormLayout.cshtml";
 }
 
-<h2>Delete Ingredient</h2>
+<style>
+    /* Custom styles to match the target design */
+    .page-container {
+        max-width: 850px;
+        margin: 2rem auto;
+    }
 
-<h4>Are you sure you want to delete this ingredient?</h4>
+    .page-title {
+        color: #f06a54; /* Orange-red color from image */
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
 
-<div>
-    <h5>@Model.Name</h5>
-    <dl class="row">
-        <dt class="col-sm-2">Quantity</dt>
-        <dd class="col-sm-10">@Model.Quantity</dd>
+    .delete-card {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); /* Lighter shadow from image */
+        border: none;
+        border-top: 4px solid #f06a54; /* Orange-red top border */
+    }
 
-        <dt class="col-sm-2">Recipe ID</dt>
-        <dd class="col-sm-10">@Model.RecipeId</dd>
-    </dl>
+    .card-body-custom {
+        padding: 3rem;
+    }
+
+    .confirmation-question {
+        color: #6c757d;
+        font-weight: 500;
+        font-size: 1.5rem;
+    }
+
+    /* Styling for the ingredient details section */
+    .detail-label {
+        color: #adb5bd; /* Light grey for labels */
+        font-size: 0.9em;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .detail-value {
+        color: #495057; /* Darker text for values */
+        font-weight: 500;
+        font-size: 1.1em;
+    }
+
+    /* Styling for the footer and action buttons */
+    .card-actions-footer {
+        padding: 1.5rem 3rem;
+        border-top: 1px solid #f1f1f1; /* Light divider line from image */
+        background-color: transparent;
+    }
+
+    .btn-custom {
+        padding: 0.6rem 2.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        border: none;
+        color: white;
+    }
+
+    .btn-delete-custom {
+        background-color: #f06a54; /* Orange-red delete button */
+    }
+
+        .btn-delete-custom:hover {
+            background-color: #d95f4c;
+        }
+
+    .btn-cancel-custom {
+        background-color: #f4a29a; /* Light pink cancel button */
+    }
+
+        .btn-cancel-custom:hover {
+            background-color: #e58d86;
+        }
+</style>
+
+<div class="container page-container">
+
+    <!-- Page Header -->
+    <h2 class="page-title">Delete Ingredient</h2>
+
+    <!-- Delete Confirmation Card -->
+    <div class="delete-card">
+        <div class="card-body card-body-custom text-center">
+
+            <h3 class="confirmation-question mb-5">Are you sure you want to delete this ingredient?</h3>
+
+            <!-- This section aligns the text as shown in the image -->
+            <div class="row justify-content-center">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <span class="detail-label">Name</span>
+                    <span class="detail-value">@Model.Name</span>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <span class="detail-label">Quantity</span>
+                    <span class="detail-value">@Model.Quantity</span>
+                </div>
+                <div class="col-md-4">
+                    <span class="detail-label">Recipe ID</span>
+                    <span class="detail-value">@Model.RecipeId</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card-actions-footer d-flex justify-content-center gap-3">
+            <form asp-action="Delete" method="post" class="d-inline">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-custom btn-delete-custom">Delete</button>
+            </form>
+            <a asp-action="Index" class="btn btn-custom btn-cancel-custom">Cancel</a>
+        </div>
+    </div>
 </div>
-
-<form asp-action="Delete" method="post">
-    <input type="hidden" asp-for="Id" />
-    <button type="submit" class="btn btn-danger">Delete</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>

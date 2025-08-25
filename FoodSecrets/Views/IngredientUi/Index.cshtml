@@ -1,37 +1,94 @@
 ﻿@model IEnumerable<IngredientDto>
 @{
     ViewData["Title"] = "Ingredients";
-    Layout = "~/Views/Shared/_DashboardLayout.cshtml"; 
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<h2>Ingredients</h2>
+<style>
+    .ingredient-card {
+        position: relative;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        box-shadow: -4px -4px 13px rgba(0, 0, 0, 0.14); /* left-top shadow */
+    }
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Add New Ingredient</a>
-</p>
+        .ingredient-card:hover {
+            transform: translateY(-4px);
+            box-shadow: -6px -6px 20px rgba(0, 0, 0, 0.4); /* stronger left-top shadow on hover */
+        }
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Quantity</th>
-            <th>Recipe ID</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
+        /* pink underline effect */
+        .ingredient-card::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            width: 0;
+            background-color: #f3969a;
+            transition: width 0.3s ease-in-out;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .ingredient-card:hover::after {
+            width: 100%;
+        }
+</style>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-success mb-0">
+            <i class="bi bi-basket me-2"></i> Ingredients
+        </h2>
+        <a asp-action="Create" class="btn btn-success shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> Add Ingredient
+        </a>
+    </div>
+
+    <!-- Ingredients Grid -->
+    <div class="row g-4">
         @foreach (var item in Model)
         {
-            <tr>
-                <td>@item.Name</td>
-                <td>@item.Quantity</td>
-                <td>@item.RecipeId</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Delete</a>
-                </td>
-            </tr>
+            <div class="col-md-5 col-lg-3">
+                <div class="card ingredient-card h-100 border-0 rounded-3">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-basket2-fill text-success" style="font-size:2rem;"></i>
+                        </div>
+                        <h5 class="card-title fw-bold text-dark">@item.Name</h5>
+                        <p class="text-muted mb-3">
+                            Quantity: <span class="fw-semibold">@item.Quantity</span>
+                        </p>
+
+                        <div class="d-flex justify-content-center gap-2">
+                            <a asp-action="Details" asp-route-id="@item.Id"
+                               class="btn btn-md btn-outline-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@item.Id"
+                               class="btn btn-md btn-outline-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id"
+                               class="btn btn-md btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
         }
-    </tbody>
-</table>
+    </div>
+
+    <!-- No ingredients fallback -->
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center mt-4">
+            <i class="bi bi-info-circle me-2"></i> No ingredients found.
+            <a asp-action="Create" class="fw-semibold text-success">Add one now</a>.
+        </div>
+    }
+</div>

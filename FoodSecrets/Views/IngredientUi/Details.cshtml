@@ -1,22 +1,100 @@
 ﻿@model IngredientDto
 @{
     ViewData["Title"] = "Ingredient Details";
+    Layout = "~/Views/Shared/_FormLayout.cshtml";
 }
 
-<h2>Ingredient Details</h2>
+<style>
+    .page-container {
+        max-width: 850px;
+        margin: 2rem auto;
+    }
 
-<div>
-    <h4>@Model.Name</h4>
-    <dl class="row">
-        <dt class="col-sm-2">Quantity</dt>
-        <dd class="col-sm-10">@Model.Quantity</dd>
+    .page-title {
+        color: #6cc3d5;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
 
-        <dt class="col-sm-2">Recipe ID</dt>
-        <dd class="col-sm-10">@Model.RecipeId</dd>
-    </dl>
+    .details-card {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        border: none;
+        border-top: 4px solid #6cc3d5;
+    }
+
+    .card-body-custom {
+        padding: 3rem;
+        text-align: center;
+    }
+
+    .detail-row {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: #212529;
+        font-weight: 500;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        margin-right: 0.5rem;
+        color: #495057;
+    }
+
+    .card-footer-sticky {
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+        padding: 1rem 2rem;
+        text-align: center;
+    }
+
+    .btn-custom {
+        padding: 0.6rem 2.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        border: none;
+        color: white;
+    }
+
+    .btn-edit-custom {
+        background-color: #6cc3d5;
+    }
+
+        .btn-edit-custom:hover {
+            background-color: #0ca0bf;
+        }
+
+
+</style>
+
+<div class="container page-container">
+
+    <!-- Page Header -->
+    <h2 class="page-title">
+        <i class="bi bi-info-circle me-2"></i> Ingredient Details
+    </h2>
+
+    <!-- Details Card -->
+    <div class="details-card">
+        <div class="card-body card-body-custom">
+            <div class="mb-4">
+                <i class="bi bi-basket2-fill text-primary" style="font-size:3rem;"></i>
+            </div>
+
+            <!-- Details as Label: Value -->
+            <div class="detail-row"><span class="detail-label">Name:</span> @Model.Name</div>
+            <div class="detail-row"><span class="detail-label">Quantity:</span> @Model.Quantity</div>
+            <div class="detail-row"><span class="detail-label">Recipe ID:</span> @Model.RecipeId</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="card-footer-sticky">
+        
+            <a asp-action="Index" class="btn btn-custom btn-edit-custom">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+        </div>
+    </div>
 </div>
-
-<p>
-    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
-    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-</p>
