@@ -1,68 +1,78 @@
 ﻿@model RecipeDto
 @{
     ViewData["Title"] = "Edit Recipe";
-
+    Layout = "~/Views/Shared/_FormLayout.cshtml";
 }
 
-<h2>Edit Recipe</h2>
+<div class="row justify-content-center m-1">
+    <div class="col-md-10 col-lg-8">
+        <!-- extended width -->
+        <div class="card shadow-lg border-0 rounded-3">
+            <div class="card-header bg-success text-white text-center">
+                <h4 class="mb-0">Edit Recipe</h4>
+            </div>
+            <div class="card-body p-3">
+                <!-- more padding for wider layout -->
+                <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="Id" />
 
-<form asp-action="Edit" asp-controller="RecipeUi" method="post" enctype="multipart/form-data">
-    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-    <div class="form-group mb-3">
-        <label asp-for="Name"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
-    </div>
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold"></label>
+                        <input asp-for="Name" class="form-control" placeholder="Enter recipe name" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
 
-    <div class="form-group mb-3">
-        <label asp-for="Description"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="Write description..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
 
-    <div class="form-group mb-3">
-        <label asp-for="Cusine"></label>
-        <input asp-for="Cusine" class="form-control" />
-        <span asp-validation-for="Cusine" class="text-danger"></span>
-    </div>
+                    <div class="mb-3">
+                        <label asp-for="Cusine" class="form-label fw-semibold"></label>
+                        <input asp-for="Cusine" class="form-control" placeholder="e.g., Italian, Mexican" />
+                        <span asp-validation-for="Cusine" class="text-danger"></span>
+                    </div>
 
-    <div class="form-group mb-3">
-        <label asp-for="MealType"></label>
-        <input asp-for="MealType" class="form-control" />
-        <span asp-validation-for="MealType" class="text-danger"></span>
-    </div>
+                    <div class="mb-3">
+                        <label asp-for="MealType" class="form-label fw-semibold"></label>
+                        <input asp-for="MealType" class="form-control" placeholder="e.g., Breakfast, Dinner" />
+                        <span asp-validation-for="MealType" class="text-danger"></span>
+                    </div>
 
-    <div class="form-group mb-3">
-        <label asp-for="AstimatedCookingTime"></label>
-        <input asp-for="AstimatedCookingTime"
-               class="form-control"
-               type="time"
-               step="60"
-               value="@Model.AstimatedCookingTime.ToString(@"hh\:mm")" />
-        <span asp-validation-for="AstimatedCookingTime" class="text-danger"></span>
-    </div>
+                    <div class="mb-3">
+                        <label asp-for="AstimatedCookingTime" class="form-label fw-semibold"></label>
+                        <input asp-for="AstimatedCookingTime" class="form-control" />
+                        <span asp-validation-for="AstimatedCookingTime" class="text-danger"></span>
+                    </div>
 
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Current Image</label>
+                            <div class="mb-2">
+                                <img src="@Model.ImageUrl"
+                                     alt="Current Recipe Image"
+                                     class="rounded border"
+                                     style="width: 150px; height: 120px; object-fit: cover;" />
+                            </div>
+                        </div>
+                    }
 
-    <!-- Show existing image -->
-    @if (!string.IsNullOrEmpty(Model.ImageUrl))
-    {
-        <div class="form-group mb-3">
-            <label>Current Image</label><br />
-            <img src="@Model.ImageUrl" alt="Recipe Image" width="150" class="img-thumbnail mb-2" />
+                    <div class="mb-3">
+                        <label asp-for="ImageUrl" class="form-label fw-semibold">Upload New Image (optional)</label>
+                        <input asp-for="ImageUrl" type="file" class="form-control" accept="image/*" />
+                        <span asp-validation-for="ImageUrl" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success px-4">Save Changes</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    }
-
-    <!-- Upload new image -->
-    <div class="form-group mb-3">
-        <label>Upload New Image (optional)</label>
-        <input type="file" name="ImageFile" class="form-control" accept="image/*" />
     </div>
-
-    <button type="submit" class="btn btn-success">Save Changes</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+</div>

@@ -146,13 +146,14 @@ namespace FoodSecrets.Controllers
         }
 
         // Handle delete POST
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
+        [ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var success = await _recipeService.DeleteAsync(id);
             if (!success) return BadRequest("Unable to delete recipe.");
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Index","RecipeUi");
         }
         public async Task<IActionResult> ByCuisine(string cuisine)
         {

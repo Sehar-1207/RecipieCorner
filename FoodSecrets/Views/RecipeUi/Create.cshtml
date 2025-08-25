@@ -1,49 +1,64 @@
 ﻿@model RecipeDto
 @{
     ViewData["Title"] = "Create Recipe";
+    Layout = "~/Views/Shared/_FormLayout.cshtml";
+    <!-- use same form layout -->
 }
 
-<h2>Create Recipe</h2>
+<div class="row justify-content-center m-1">
+    <div class="col-md-10 col-lg-8">
+        <div class="card shadow-lg border-0 rounded-3">
+            <div class="card-header bg-success text-white text-center">
+                <h4 class="mb-0">Create Recipe</h4>
+            </div>
+            <div class="card-body p-3">
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-<form asp-action="Create" method="post" enctype="multipart/form-data">
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold"></label>
+                        <input asp-for="Name" class="form-control" placeholder="Enter recipe name" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="Write description..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Cusine" class="form-label fw-semibold"></label>
+                        <input asp-for="Cusine" class="form-control" placeholder="e.g., Italian, Mexican" />
+                        <span asp-validation-for="Cusine" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MealType" class="form-label fw-semibold"></label>
+                        <input asp-for="MealType" class="form-control" placeholder="e.g., Breakfast, Dinner" />
+                        <span asp-validation-for="MealType" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="AstimatedCookingTime" class="form-label fw-semibold"></label>
+                        <input asp-for="AstimatedCookingTime" class="form-control" step="60" placeholder="Time like 01:00" />
+                        <span asp-validation-for="AstimatedCookingTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Recipe Image</label>
+                        <input type="file" name="ImageFile" class="form-control" accept="image/*" />
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success px-4">Create Recipe</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Cusine" class="form-label"></label>
-        <input asp-for="Cusine" class="form-control" />
-        <span asp-validation-for="Cusine" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="MealType" class="form-label"></label>
-        <input asp-for="MealType" class="form-control" />
-        <span asp-validation-for="MealType" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="AstimatedCookingTime" class="form-label"></label>
-        <input asp-for="AstimatedCookingTime" type="time" class="form-control" step="60" />
-        <span asp-validation-for="AstimatedCookingTime" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Recipe Image</label>
-        <input type="file" name="ImageFile" class="form-control" accept="image/*" />
-    </div>
-
-    <button type="submit" class="btn btn-success">Create Recipe</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

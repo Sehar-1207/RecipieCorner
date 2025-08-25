@@ -19,7 +19,7 @@
         @* IMPORTANT: Please ensure these property names match your C# DTO class exactly. *@
         <span class="meta-item"><i class="fas fa-utensils"></i> Cuisine: <strong>@Model.Cusine</strong></span>
         <span class="meta-item"><i class="fas fa-tag"></i> Meal Type: <strong>@Model.MealType</strong></span>
-        <span class="meta-item"><i class="fas fa-clock"></i> Time: <strong>@Model.AstimatedCookingTime.ToString("hh\\:mm")</strong></span>
+        <span class="meta-item"><i class="fas fa-clock"></i> Time: <strong>@Model.AstimatedCookingTime.ToString("hh\\:mm") mins</strong></span>
     </div>
 
     <p class="recipe-description">@Model.Description</p>
@@ -126,6 +126,7 @@
         @if (User.IsInRole("Admin"))
         {
             <a asp-action="Edit" asp-controller="RecipeUi" asp-route-id="@Model.Id" class="btn btn-primary">Edit Recipe</a>
+            <a asp-action="Delete" asp-controller="RecipeUi" asp-route-id="@Model.Id" class="btn btn-danger">Delete Recipe</a>
         }
         <a asp-action="Index" asp-controller="RecipeUi" class="btn btn-secondary">Back to Recipe List</a>
     </div>
