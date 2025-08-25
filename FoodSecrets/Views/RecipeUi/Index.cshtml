@@ -7,17 +7,13 @@
     // Read role from session
     var userRole = Context.Session.GetString("UserRole") ?? "User";
 }
-
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Recipes</h2>
 
-    <div>
-        @if (User.IsInRole("Admin"))
-        {
-            <a asp-action="Create" asp-controller="RecipeUi" class="btn btn-success me-2">+ Add Recipe</a>
-        }
-
-    </div>
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="Create" asp-controller="RecipeUi" class="btn btn-success">+ Add Recipe</a>
+    }
 </div>
 
 @if (Model == null || !Model.Any())
@@ -26,37 +22,32 @@
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <div class="recipe-grid">
         @foreach (var recipe in Model)
         {
-            <div class="col">
-                <div class="card h-100">
-                    @if (!string.IsNullOrEmpty(recipe.ImageUrl))
-                    {
-                        <img src="@recipe.ImageUrl" class="card-img-top" alt="@recipe.Name" style="height:200px; object-fit:cover;" />
-                    }
-                    else
-                    {
-                        <img src="/images/default-recipe.png" class="card-img-top" alt="No Image" style="height:200px; object-fit:cover;" />
-                    }
+            <div class="recipe-card">
+                @if (!string.IsNullOrEmpty(recipe.ImageUrl))
+                {
+                    <img src="@recipe.ImageUrl" class="card-img-top" alt="@recipe.Name" />
+                }
+                else
+                {
+                    <img src="/images/default-recipe.png" class="card-img-top" alt="No Image" />
+                }
 
-                    <div class="card-body">
-                        <h5 class="card-title">@recipe.Name</h5>
-                        <p class="card-text">@recipe.Description</p>
-                        <p class="card-text">
-                            <small class="text-muted">
-                                Cuisine: @recipe.Cusine | Meal Type: @recipe.MealType
-                            </small>
-                        </p>
-                        <p class="card-text">
-                            <small class="text-muted">
-                                Estimated Cooking Time: @recipe.AstimatedCookingTime.ToString("hh\\:mm\\:ss")
-                            </small>
-                        </p>
-                    </div>
-                    <div class="card-footer text-end">
-                        <a href="@Url.Action("Details", "RecipeUi", new { id = recipe.Id })" class="btn btn-primary btn-sm">Read More</a>
-                    </div>
+                <div class="card-body mt-1">
+                    <h5 class="card-title">@recipe.Name</h5>
+                    <p class="card-text">@recipe.Description</p>
+                    <p class="recipe-meta">
+                        Cuisine: @recipe.Cusine | Meal Type: @recipe.MealType
+                    </p>
+                    <p class="recipe-meta">
+                        Estimated Cooking Time: @recipe.AstimatedCookingTime.ToString("hh\\:mm\\:ss")
+                    </p>
+                <div>
+                </div>
+                <hr/>
+                    <a href="@Url.Action("Details", "RecipeUi", new { id = recipe.Id })" class="btn btn-primary btn-sm m-2">Read More</a>
                 </div>
             </div>
         }

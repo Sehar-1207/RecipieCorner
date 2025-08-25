@@ -1,148 +1,132 @@
 ﻿@model RecipeDetailsDto
 
 @{
-    ViewData["Title"] = "Recipe Details";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Details Recipe";
+    Layout = "~/Views/Shared/_DetailsLayout.cshtml";
+
 }
 
-<h2>@Model.Name</h2>
+<div class="recipe-content-wrapper">
+    <div class="recipe-header">
+        <h1 class="recipe-title">@Model.Name</h1>
+    </div>
 
-<div class="row mb-4">
-    <div class="col-md-4">
-        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+    <div class="recipe-image-container">
+        <img src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/default-recipe.png" : Model.ImageUrl)" class="recipe-hero-image" alt="@Model.Name" />
+    </div>
+
+    <div class="recipe-meta-bar">
+        @* IMPORTANT: Please ensure these property names match your C# DTO class exactly. *@
+        <span class="meta-item"><i class="fas fa-utensils"></i> Cuisine: <strong>@Model.Cusine</strong></span>
+        <span class="meta-item"><i class="fas fa-tag"></i> Meal Type: <strong>@Model.MealType</strong></span>
+        <span class="meta-item"><i class="fas fa-clock"></i> Time: <strong>@Model.AstimatedCookingTime.ToString("hh\\:mm")</strong></span>
+    </div>
+
+    <p class="recipe-description">@Model.Description</p>
+
+    <div class="row">
+        <div class="col-lg-5 mb-5 mb-lg-0">
+            <h3 class="recipe-section-title">Ingredients</h3>
+            @if (Model.Ingredients != null && Model.Ingredients.Any())
+            {
+                <ul class="ingredient-list">
+                    @foreach (var ing in Model.Ingredients)
+                    {
+                        <li>
+                            <span>@ing.Name - @ing.Quantity</span>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <span class="admin-actions">
+                                    <a asp-controller="IngredientUi" asp-action="Edit" asp-route-id="@ing.Id" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                    <a asp-controller="IngredientUi" asp-action="Delete" asp-route-id="@ing.Id" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                                </span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+
+                <p>No ingredients added yet.</p>
+            }
+        </div>
+
+        <div class="col-lg-7">
+            <h3 class="recipe-section-title">Instructions</h3>
+            @if (Model.Instructions != null && Model.Instructions.Any())
+            {
+                <ol class="instruction-list">
+                    @foreach (var step in Model.Instructions.OrderBy(i => i.Order))
+                    {
+                        <li>
+                            <span class="instruction-text">@step.StepInstruction</span>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <span class="admin-actions">
+                                    <a asp-controller="InstructionUi" asp-action="Edit" asp-route-id="@step.Id" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                    <a asp-controller="InstructionUi" asp-action="Delete" asp-route-id="@step.Id" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                                </span>
+                            }
+                        </li>
+                    }
+                </ol>
+            }
+            else
+            {
+
+                <p>No instructions added yet.</p>
+            }
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <h3 class="recipe-section-title">Ratings & Reviews</h3>
+        @if (User.IsInRole("Admin"))
         {
-            <img src="@Model.ImageUrl" class="img-fluid rounded" alt="@Model.Name" />
+            <a asp-controller="RatingUi" asp-action="Create" asp-route-recipeId="@Model.Id" class="btn btn-sm btn-primary float-end">Add Rating</a>
+        }
+        @if (Model.Ratings != null && Model.Ratings.Any())
+        {
+            <div class="mt-4">
+                @foreach (var r in Model.Ratings)
+                {
+                    <div class="rating-card">
+                        <div class="w-100">
+                            <div class="rating-header">
+                                <span class="rating-user">@r.UserId</span>
+                                <span class="rating-stars">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fa-star @(i <= r.Stars ? "fas" : "far")"></i>
+                                    }
+                                </span>
+                            </div>
+                            <p class="rating-comment">@r.Comment</p>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <div class="text-end">
+                                    <a asp-controller="RatingUi" asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    <a asp-controller="RatingUi" asp-action="Delete" asp-route-id="@r.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
         }
         else
         {
-            <img src="/images/default-recipe.png" class="img-fluid rounded" alt="No Image" />
+
+            <p class="mt-4">No ratings have been submitted yet.</p>
         }
     </div>
 
-    <div class="col-md-8">
-        <dl class="row">
-            <dt class="col-sm-4">Description</dt>
-            <dd class="col-sm-8">@Model.Description</dd>
-
-            <dt class="col-sm-4">Cuisine</dt>
-            <dd class="col-sm-8">@Model.Cusine</dd>
-
-            <dt class="col-sm-4">Meal Type</dt>
-            <dd class="col-sm-8">@Model.MealType</dd>
-
-            <dt class="col-sm-4">Estimated Cooking Time</dt>
-            <dd class="col-sm-8">@Model.AstimatedCookingTime.ToString("hh\\:mm\\:ss")</dd>
-        </dl>
+    <div class="final-actions">
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Edit" asp-controller="RecipeUi" asp-route-id="@Model.Id" class="btn btn-primary">Edit Recipe</a>
+        }
+        <a asp-action="Index" asp-controller="RecipeUi" class="btn btn-secondary">Back to Recipe List</a>
     </div>
 </div>
-
-<hr />
-
-<!-- Ingredients -->
-<h4>
-    Ingredients
-    @if (User.IsInRole("Admin"))
-    {
-        <a asp-controller="IngredientUi" asp-action="Create" asp-route-recipeId="@Model.Id" class="btn btn-sm btn-primary float-end">Add</a>
-    }
-</h4>
-
-@if (Model.Ingredients != null && Model.Ingredients.Any())
-{
-    <ul class="list-group mb-4">
-        @foreach (var ing in Model.Ingredients)
-        {
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                @ing.Name - @ing.Quantity
-                @if (User.IsInRole("Admin"))
-                {
-                    <span>
-                        <a asp-controller="IngredientUi" asp-action="Edit" asp-route-id="@ing.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <a asp-controller="IngredientUi" asp-action="Delete" asp-route-id="@ing.Id" class="btn btn-sm btn-danger">Delete</a>
-                    </span>
-                }
-            </li>
-        }
-    </ul>
-}
-else
-{
-    <p>No ingredients added.</p>
-}
-
-<!-- Instructions -->
-<h4>
-    Instructions
-    @if (User.IsInRole("Admin"))
-    {
-        <a asp-controller="InstructionUi" asp-action="Create" asp-route-recipeId="@Model.Id" class="btn btn-sm btn-primary float-end">Add</a>
-    }
-</h4>
-
-@if (Model.Instructions != null && Model.Instructions.Any())
-{
-    <ol class="mb-4">
-        @foreach (var step in Model.Instructions.OrderBy(i => i.Order))
-        {
-            <li class="d-flex justify-content-between align-items-center">
-                @step.StepInstruction
-                @if (User.IsInRole("Admin"))
-                {
-                    <span>
-                        <a asp-controller="InstructionUi" asp-action="Edit" asp-route-id="@step.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <a asp-controller="InstructionUi" asp-action="Delete" asp-route-id="@step.Id" class="btn btn-sm btn-danger">Delete</a>
-                    </span>
-                }
-            </li>
-        }
-    </ol>
-}
-else
-{
-    <p>No instructions added.</p>
-}
-
-<!-- Ratings -->
-<h4>
-    Ratings
-    @if (User.IsInRole("Admin"))
-    {
-        <a asp-controller="RatingUi" asp-action="Create" asp-route-recipeId="@Model.Id" class="btn btn-sm btn-primary float-end">Add</a>
-    }
-</h4>
-
-@if (Model.Ratings != null && Model.Ratings.Any())
-{
-    <ul class="list-group mb-4">
-        @foreach (var r in Model.Ratings)
-        {
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>User:</strong> @r.UserId <br />
-                    <strong>Star:</strong> @r.Stars <br />
-                    <strong>Comment:</strong> @r.Comment
-                </div>
-                @if (User.IsInRole("Admin"))
-                {
-                    <div>
-                        <a asp-controller="RatingUi" asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <a asp-controller="RatingUi" asp-action="Delete" asp-route-id="@r.Id" class="btn btn-sm btn-danger">Delete</a>
-                    </div>
-                }
-            </li>
-        }
-    </ul>
-}
-else
-{
-    <p>No ratings yet.</p>
-}
-
-<!-- Action Buttons -->
-<p class="mt-4">
-    @if (User.IsInRole("Admin"))
-    {
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit Recipe</a>
-    }
-    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-</p>

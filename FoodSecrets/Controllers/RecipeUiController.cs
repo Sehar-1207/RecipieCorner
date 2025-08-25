@@ -84,7 +84,6 @@ namespace FoodSecrets.Controllers
             return View(recipe);
         }
 
-        // POST: Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, RecipeDto dto, IFormFile? ImageFile)
@@ -93,22 +92,18 @@ namespace FoodSecrets.Controllers
 
             if (!ModelState.IsValid) return View(dto);
 
-            // If a new image is uploaded
+            // Get existing recipe
+            var existingRecipe = await _recipeService.GetByIdAsync(id);
+            if (existingRecipe == null) return NotFound();
+
+            // Handle image upload
             if (ImageFile != null && ImageFile.Length > 0)
             {
                 var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "food");
-
                 if (!Directory.Exists(folderPath))
                     Directory.CreateDirectory(folderPath);
 
-                // Delete old image if exists
-                if (!string.IsNullOrEmpty(dto.ImageUrl))
-                {
-                    var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", dto.ImageUrl.TrimStart('/'));
-                    if (System.IO.File.Exists(oldImagePath))
-                        System.IO.File.Delete(oldImagePath);
-                }
-
+                // Generate unique file name for new image
                 var fileName = $"{Guid.NewGuid()}{Path.GetExtension(ImageFile.FileName)}";
                 var filePath = Path.Combine(folderPath, fileName);
 
@@ -117,14 +112,30 @@ namespace FoodSecrets.Controllers
                     await ImageFile.CopyToAsync(stream);
                 }
 
+                // Delete old image if it exists and is different from new
+                if (!string.IsNullOrEmpty(existingRecipe.ImageUrl) &&
+                    existingRecipe.ImageUrl.TrimStart('/') != $"images/food/{fileName}" &&
+                    System.IO.File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", existingRecipe.ImageUrl.TrimStart('/'))))
+                {
+                    System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", existingRecipe.ImageUrl.TrimStart('/')));
+                }
+
+                // Update DTO with new image path
                 dto.ImageUrl = $"/images/food/{fileName}";
             }
+            else
+            {
+                // No new image uploaded, keep existing
+                dto.ImageUrl = existingRecipe.ImageUrl;
+            }
 
+            // Update recipe
             var success = await _recipeService.UpdateAsync(id, dto);
             if (!success) ModelState.AddModelError("", "Unable to update recipe.");
 
             return RedirectToAction("Index");
         }
+
 
         // Show delete confirmation
         public async Task<IActionResult> Delete(int id)

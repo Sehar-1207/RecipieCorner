@@ -1,0 +1,171 @@
+﻿
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden; /* prevent body scroll */
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 220px;
+/*    background-color: #343a40;*/
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding-top: 20px; /* Removed vertical padding to use flexbox for spacing */
+}
+
+    .sidebar .user-profile {
+        text-align: center;
+        padding: 12px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 20px;
+    }
+
+        .sidebar .user-profile img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+        }
+
+        .sidebar .user-profile h5 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1; /* Allows the nav to take up available space */
+    display: flex;
+    flex-direction: column;
+}
+
+    .sidebar-nav li a,
+    .sidebar-nav li button { /* Style both links and buttons */
+        display: block;
+        color: #fff;
+        text-decoration: none;
+        padding: 12px 20px;
+        font-size: 0.95rem;
+        transition: background-color 0.2s;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+    }
+
+    .sidebar-nav li button {
+        padding: 0;
+    }
+
+        .sidebar-nav li button span {
+            padding: 12px 20px;
+            display: block;
+        }
+
+        .sidebar-nav li a:hover,
+        .sidebar-nav li button:hover, /* Apply hover to button as well */
+        .sidebar-nav li a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+    .sidebar-nav li a.active {
+        border-left: 4px solid #fff;
+        padding-left: 16px;
+    }
+
+    .sidebar-nav li a .fa-fw,
+    .sidebar-nav li button .fa-fw {
+        margin-right: 8px;
+        width: 16px;
+    }
+
+.sidebar-bottom-links {
+    margin-top: auto; /* Pushes these items to the bottom */
+}
+
+/* Content Area */
+.content-area {
+    margin-left: 220px; /* same as sidebar width */
+    height: 100vh;
+    padding: 30px;
+    overflow-y: auto; /* scroll only this area */
+    box-sizing: border-box; /* Ensures padding is included in the height */
+}
+
+/* Your existing card styles are fine */
+.recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.recipe-card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+    .recipe-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+    }
+
+.card-img-top {
+    height: 210px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.card-body {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.card-text {
+    font-size: 0.9rem;
+    color: #6c757d;
+    flex-grow: 1;
+    margin-bottom: 10px;
+}
+
+.recipe-meta {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 15px;
+}
+
+.btn-read-more {
+    margin: 2px; /* Pushes button to the bottom of the card body */
+}
+
+/* FIX: Corrected media query syntax */
+@media (max-width: 992px) {
+    .recipe-grid {
+        grid-template-columns: 1fr;
+    }
+}

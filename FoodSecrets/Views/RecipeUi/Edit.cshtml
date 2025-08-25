@@ -1,6 +1,7 @@
 ﻿@model RecipeDto
 @{
     ViewData["Title"] = "Edit Recipe";
+
 }
 
 <h2>Edit Recipe</h2>
@@ -34,9 +35,14 @@
 
     <div class="form-group mb-3">
         <label asp-for="AstimatedCookingTime"></label>
-        <input asp-for="AstimatedCookingTime" class="form-control" type="time" />
+        <input asp-for="AstimatedCookingTime"
+               class="form-control"
+               type="time"
+               step="60"
+               value="@Model.AstimatedCookingTime.ToString(@"hh\:mm")" />
         <span asp-validation-for="AstimatedCookingTime" class="text-danger"></span>
     </div>
+
 
     <!-- Show existing image -->
     @if (!string.IsNullOrEmpty(Model.ImageUrl))
