@@ -1,0 +1,109 @@
+﻿@model RatingDto
+
+@{
+    ViewData["Title"] = "Edit Your Rating";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<!-- Custom CSS for gradient text and interactive stars -->
+<style>
+    .gradient-text-edit {
+        background: -webkit-linear-gradient(#0d6efd, #63a4ff); /* Blue gradient for editing */
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Interactive Stars (same as before, works perfectly here) */
+    .rating-stars { display: inline-flex; flex-direction: row-reverse; }
+    .rating-stars input { display: none; }
+    .rating-stars label {
+        font-size: 2.5rem;
+        color: #ddd;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .rating-stars:not(:hover) input:checked ~ label,
+    .rating-stars:hover input:hover ~ label {
+        color: #ffc107;
+    }
+</style>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+
+            <div class="card shadow-lg border-light overflow-hidden">
+                <div class="row g-0">
+
+                    <!-- Left Panel: User & Recipe Info -->
+                    <div class="col-md-4 bg-light text-center p-4 d-flex flex-column justify-content-center">
+                        <img src="@Model.ProfileImageUrl" alt="@Model.UserName" class="img-fluid rounded-circle mx-auto mb-3" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #dee2e6;" />
+                        <h5 class="card-title mb-1">@Model.UserName</h5>
+                        <p class="card-text text-muted mb-4">
+                            <small>Editing rating for</small>
+                            <br />
+                            <strong>@Model.RecipeName</strong>
+                        </p>
+                        <hr />
+                        <p class="card-text text-muted fst-italic">
+                           Your feedback helps others discover great recipes!
+                        </p>
+                    </div>
+
+                    <!-- Right Panel: Interactive Form -->
+                    <div class="col-md-8">
+                        <div class="card-body p-4 p-md-5 border-start border-primary border-5">
+                            
+                            <h2 class="card-title fw-bold gradient-text-edit">Update Your Feedback</h2>
+                            <p class="card-text text-muted mb-4">
+                                Change your rating or update your comment below.
+                            </p>
+
+                            <form asp-action="Edit" method="post" class="mt-4">
+                                <input type="hidden" asp-for="Id" />
+                                <input type="hidden" asp-for="RecipeId" />
+
+                                <!-- Interactive Star Rating -->
+                                <div class="mb-4 text-center">
+                                    <div class="rating-stars">
+                                        <input asp-for="Stars" type="radio" id="star5" value="5" /><label for="star5" title="5 stars">&#9733;</label>
+                                        <input asp-for="Stars" type="radio" id="star4" value="4" /><label for="star4" title="4 stars">&#9733;</label>
+                                        <input asp-for="Stars" type="radio" id="star3" value="3" /><label for="star3" title="3 stars">&#9733;</label>
+                                        <input asp-for="Stars" type="radio" id="star2" value="2" /><label for="star2" title="2 stars">&#9733;</label>
+                                        <input asp-for="Stars" type="radio" id="star1" value="1" /><label for="star1" title="1 star">&#9733;</label>
+                                    </div>
+                                    <span asp-validation-for="Stars" class="text-danger d-block mt-1"></span>
+                                </div>
+
+                                <!-- Comment Text Area -->
+                                <div class="mb-4">
+                                    <label asp-for="Comment" class="form-label">Your Comment</label>
+                                    <textarea asp-for="Comment" class="form-control" rows="5" placeholder="Update your thoughts..."></textarea>
+                                    <span asp-validation-for="Comment" class="text-danger"></span>
+                                </div>
+
+                                <!-- Form Actions -->
+                                <div class="d-flex justify-content-end gap-2 mt-4">
+                                    <a asp-controller="RecipeUi" asp-action="Details" asp-route-id="@Model.RecipeId" class="btn btn-secondary px-4">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="fas fa-save me-2"></i> Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <!-- Font Awesome for icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+}

@@ -17,6 +17,14 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();
 builder.Services.AddScoped<IRecipeMvc, RecipeService>();
 builder.Services.AddScoped<IIngredientMvc, IngredientService>();
+builder.Services.AddScoped<IinstructionsService, InstructionService>();
+
+// ✅ ApiClientService with HttpClient + BaseUrl from config
+builder.Services.AddHttpClient<ApiClientService>(c =>
+{
+    c.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"]);
+});
+
 builder.Services.AddScoped<RefreshTokenFilter>();
 builder.Services.AddControllersWithViews(options =>
 {
@@ -29,16 +37,20 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/AuthAccount/Login";   // redirect if not logged in
         options.LogoutPath = "/AuthAccount/Logout"; // logout path
+        options.AccessDeniedPath = "/AuthAccount/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromDays(7); // keep cookie for 7 days
         options.SlidingExpiration = true; // refresh cookie on activity
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
         options.Cookie.Name = ".FoodSecrets.Auth";
     });
-
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
 
 // ✅ Add Session
-builder.Services.AddDistributedMemoryCache(); // Required for session
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(20); // Session timeout
@@ -60,12 +72,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// ✅ Middleware order matters
-app.UseAuthentication();  // <-- Cookie login
-app.UseSession();         // <-- Session
+// ✅ Correct order
+app.UseSession();        // <-- Session first
+app.UseAuthentication(); // <-- Then authentication
 app.UseAuthorization();
 
-// Default route
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=RecipeUi}/{action=Index}/{id?}");

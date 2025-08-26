@@ -108,7 +108,7 @@ body {
 .recipe-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* exactly 3 per row */
-    gap: 12px; /* spacing between cards */
+    gap: 40px; /* spacing between cards */
     justify-items: center; /* center the fixed-width cards */
 }
 
@@ -120,7 +120,7 @@ body {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     display: flex;
     flex-direction: column;
-    width: 350px;
+    width: 370px;
 }
 
     .recipe-card:hover {

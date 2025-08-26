@@ -20,3 +20,4 @@ namespace RecipeCorner.Models
         public Recipe Recipe { get; set; }
     }
 }
+

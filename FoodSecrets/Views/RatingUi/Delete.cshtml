@@ -1,0 +1,109 @@
+﻿@model RatingDto
+
+@{
+    ViewData["Title"] = "Confirm Delete Rating";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<!-- Custom CSS for animations and advanced styling -->
+<style>
+    .gradient-text {
+        background: -webkit-linear-gradient(#ff6b6b, #d9534f);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .btn-pulse {
+        animation: pulse-animation 1.5s infinite;
+    }
+
+    @@keyframes pulse-animation {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+    }
+</style>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+
+            <div class="card shadow-lg border-light overflow-hidden">
+                <div class="row g-0">
+
+                    <!-- Left Panel: User Info -->
+                    <div class="col-md-4 bg-light text-center p-4 d-flex flex-column justify-content-center">
+                        <img src="@Model.ProfileImageUrl" alt="@Model.UserName" class="img-fluid rounded-circle mx-auto mb-3" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #dee2e6;" />
+                        <h5 class="card-title mb-1">@Model.UserName</h5>
+                        <p class="card-text text-muted">
+                            <small>Rated on @Model.commentAt.ToString("MMM dd, yyyy")</small>
+                        </p>
+                    </div>
+
+                    <!-- Right Panel: Rating Info & Confirmation -->
+                    <div class="col-md-8">
+                        <div class="card-body p-4 p-md-5 border-start border-danger border-5">
+
+                            <h2 class="card-title fw-bold gradient-text">Delete Rating?</h2>
+                            <p class="card-text text-muted mb-4">
+                                You are about to permanently delete the rating for <strong>@Model.RecipeName</strong>. This action cannot be undone.
+                            </p>
+
+                            <div class="text-center my-4">
+                                <h3 class="display-5 text-warning">
+                                    @for (int i = 0; i < Model.Stars; i++)
+                                    {
+                                        <span>&#9733;</span>
+                                    }
+                                    @for (int i = Model.Stars; i < 5; i++)
+                                    {
+                                        <span class="opacity-50">&#9734;</span>
+                                    }
+                                </h3>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(Model.Comment))
+                            {
+                                <figure class="text-center">
+                                    <blockquote class="blockquote">
+                                        <p class="fst-italic">"@Model.Comment"</p>
+                                    </blockquote>
+                                </figure>
+                            }
+
+                            <!-- Form for deletion -->
+                            <form asp-action="Delete" method="post" class="mt-4">
+                                <input type="hidden" asp-for="Id" />
+                                <input type="hidden" name="recipeId" value="@Model.RecipeId" />
+
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a asp-controller="RecipeUi" asp-action="Details" asp-route-id="@Model.RecipeId" class="btn btn-secondary px-4">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-danger btn-pulse px-4">
+                                        <i class="fas fa-trash-alt me-2"></i> Confirm
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Font Awesome for icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+}

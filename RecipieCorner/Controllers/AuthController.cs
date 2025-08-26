@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using RecipeCorner.Dtos;
 using RecipeCorner.Models;
 using RecipeCorner.Services;
+using System.Security.Claims;
 
 namespace RecipeCorner.Controllers
 {
@@ -164,6 +166,57 @@ namespace RecipeCorner.Controllers
             }
         }
 
+        // GET api/Auth/me
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<ActionResult<UserDetailsDto>> GetCurrentUser()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return NotFound();
+
+            return Ok(new UserDetailsDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                ProfileImageUrl = user.ProfileImageUrl
+            });
+        }
+
+        // POST api/Auth/update-profile
+        [Authorize]
+        [HttpPost("update-profile")]
+        public async Task<ActionResult<UserDetailsDto>> UpdateProfile([FromBody] UpdateProfile dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return NotFound();
+
+            // Update FullName
+            user.FullName = dto.FullName;
+
+            // Update ProfileImageUrl if provided (uploaded from MVC)
+
+            if (!string.IsNullOrEmpty(dto.ProfileImageUrl))
+            {
+                user.ProfileImageUrl = dto.ProfileImageUrl;
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+
+            return Ok(new UserDetailsDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                ProfileImageUrl = user.ProfileImageUrl
+            });
+        }
     }
 }

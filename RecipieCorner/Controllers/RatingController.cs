@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using RecipeCorner.Interfaces;
 using RecipeCorner.Models;
 using System.Security.Claims;
@@ -19,119 +19,72 @@ namespace RecipeCorner.Controllers
             _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
-
-        // GET: api/rating
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
+        private static RatingDto ToDto(Rating r) => new RatingDto
         {
-            var ratings = await _unitOfWork.rating
-                .GetAllWithIncludeAsync(r => r.User);   // make sure User is included
+            Id = r.Id,
+            Stars = r.Stars,
+            Comment = r.Comment,
+            RecipeId = r.RecipeId,
+            UserId = r.UserId,
+            UserName = r.User?.UserName,
+            ProfileImageUrl = r.User?.ProfileImageUrl,
+            commentAt = r.commentAt,
+            RecipeName = r.Recipe?.Name // <-- Map the recipe name here
+        };
 
-            var dtos = ratings.Select(r => new RatingDto
-            {
-                Id = r.Id,
-                Stars = r.Stars,
-                Comment = r.Comment,
-                RecipeId = r.RecipeId,
-                UserId = r.UserId,
-                UserName = r.User?.UserName,
-                ProfileImageUrl = r.User?.ProfileImageUrl,
-                commentAt = r.commentAt
-            });
-
-            return Ok(dtos);
-        }
-
-        // GET: api/rating/5
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(int id)
         {
-            var rating = await _unitOfWork.rating
-                .GetByIdWithIncludeAsync(id, r => r.User);
-
+            var rating = await _unitOfWork.rating.GetByIdWithIncludeAsync(id,
+      r => r.User,   // Include the User
+      r => r.Recipe  // Also include the Recipe
+  );
             if (rating == null) return NotFound();
-
-            var dto = new RatingDto
-            {
-                Id = rating.Id,
-                Stars = rating.Stars,
-                Comment = rating.Comment,
-                RecipeId = rating.RecipeId,
-                UserId = rating.UserId,
-                UserName = rating.User?.UserName,
-                ProfileImageUrl = rating.User?.ProfileImageUrl,
-                commentAt = rating.commentAt
-            };
-
-            return Ok(dto);
+            return Ok(ToDto(rating));
         }
 
-        // POST: api/rating
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] RatingDto dto)
+        // --- UPDATE THE GetAll METHOD ---
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAll()
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            // Modify the query to also include the Recipe entity
+            var ratings = await _unitOfWork.rating.GetAllWithIncludeAsync(
+                r => r.User,   // Include the User
+                r => r.Recipe  // Include the Recipe
+            );
 
-            // get current logged in user
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _userManager.FindByIdAsync(userId);
-
-            if (user == null) return Unauthorized();
-
-            var rating = new Rating
-            {
-                Stars = dto.Stars,
-                Comment = dto.Comment,
-                RecipeId = dto.RecipeId,
-                UserId = user.Id,
-                commentAt = DateTime.UtcNow
-            };
-
-            await _unitOfWork.rating.AddAsync(rating);
-            await _unitOfWork.SaveAsync();
-
-            var resultDto = new RatingDto
-            {
-                Id = rating.Id,
-                Stars = rating.Stars,
-                Comment = rating.Comment,
-                RecipeId = rating.RecipeId,
-                UserId = user.Id,
-                UserName = user.UserName,
-                ProfileImageUrl = user.ProfileImageUrl,
-                commentAt = rating.commentAt
-            };
-
-            return CreatedAtAction(nameof(GetById), new { id = rating.Id }, resultDto);
+            return Ok(ratings.Select(ToDto));
         }
 
-        // PUT: api/rating/5
         [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> Update(int id, [FromBody] RatingDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch");
 
-            var existing = await _unitOfWork.rating.GetByIdAsync(id);
+            var existing = await _unitOfWork.rating.GetByIdWithIncludeAsync(id, r => r.User);
             if (existing == null) return NotFound();
 
-            // ensure only owner can edit
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (existing.UserId != userId) return Forbid();
 
             existing.Stars = dto.Stars;
             existing.Comment = dto.Comment;
+            existing.commentAt = DateTime.UtcNow;
 
             _unitOfWork.rating.Update(existing);
             await _unitOfWork.SaveAsync();
 
-            return NoContent();
+            return Ok(ToDto(existing));
         }
 
-        // DELETE: api/rating/5
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
-            var rating = await _unitOfWork.rating.GetByIdAsync(id);
+            var rating = await _unitOfWork.rating.GetByIdWithIncludeAsync(id, r => r.User);
             if (rating == null) return NotFound();
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -140,7 +93,7 @@ namespace RecipeCorner.Controllers
             _unitOfWork.rating.Delete(rating);
             await _unitOfWork.SaveAsync();
 
-            return NoContent();
+            return Ok(ToDto(rating));
         }
     }
 }

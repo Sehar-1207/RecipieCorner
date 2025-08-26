@@ -1,10 +1,11 @@
 ﻿using FoodSecrets.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using RecipeCorner.Dtos;
-using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace FoodSecrets.Controllers
 {
@@ -19,154 +20,186 @@ namespace FoodSecrets.Controllers
             _env = env;
         }
 
-        // ✅ GET: /AuthAccount/Register
         public IActionResult Register() => View();
 
-        // ✅ POST: /AuthAccount/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterDto dto, IFormFile? ProfileImage)
         {
-            if (!ModelState.IsValid)
-                return View(dto);
+            if (!ModelState.IsValid) return View(dto);
 
-            // Save profile image if provided
-            if (ProfileImage != null && ProfileImage.Length > 0)
+            string? imagePath = null;
+
+            // Handle image upload
+            if (ProfileImage != null)
             {
-                string uploadsFolder = Path.Combine(_env.WebRootPath, "images", "users");
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "images", "users");
                 if (!Directory.Exists(uploadsFolder))
                     Directory.CreateDirectory(uploadsFolder);
 
-                string fileName = Guid.NewGuid() + Path.GetExtension(ProfileImage.FileName);
-                string filePath = Path.Combine(uploadsFolder, fileName);
+                var fileName = $"{Guid.NewGuid()}_{ProfileImage.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await ProfileImage.CopyToAsync(stream);
-                }
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await ProfileImage.CopyToAsync(stream);
 
-                dto.ProfileImage = "/images/users/" + fileName;
+                imagePath = $"/images/users/{fileName}";
             }
 
-            var result = await _authService.RegisterAsync(dto);
+            var result = await _authService.RegisterAsync(dto, imagePath);
 
-            if (result == null || result.Token == null || string.IsNullOrEmpty(result.Token.AccessToken))
+            if (result?.Token?.AccessToken == null)
             {
-                ModelState.AddModelError("", "Registration failed.");
+                ModelState.AddModelError("", "Registration failed. Email may already be in use.");
                 return View(dto);
             }
 
-            // ✅ Extract roles from JWT
-            var roles = ExtractRolesFromJwt(result.Token.AccessToken);
-
-            SaveSession(result.FullName, result.Token.AccessToken, result.Token.RefreshToken, result.ProfileImageUrl, roles);
-            await SignInWithCookie(result.FullName, result.Token.AccessToken, roles);
-
-            TempData["Message"] = "Registration successful!";
+            await HandleSuccessfulLogin(result);
+            TempData["Message"] = $"Welcome, {result.FullName}! Your account has been created.";
             return RedirectToAction("Index", "RecipeUi");
         }
 
-        // ✅ GET: /AuthAccount/Login
         public IActionResult Login() => View();
 
-        // ✅ POST: /AuthAccount/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            if (!ModelState.IsValid)
-                return View(dto);
+            if (!ModelState.IsValid) return View(dto);
 
-            try
+            var result = await _authService.LoginAsync(dto);
+
+            if (result?.Token?.AccessToken == null)
             {
-                var result = await _authService.LoginAsync(dto);
-
-                if (result == null || result.Token == null || string.IsNullOrEmpty(result.Token.AccessToken))
-                {
-                    ModelState.AddModelError("", "Invalid email or password.");
-                    return View(dto);
-                }
-
-                // ✅ Extract roles from JWT
-                var roles = ExtractRolesFromJwt(result.Token.AccessToken);
-
-                SaveSession(result.FullName, result.Token.AccessToken, result.Token.RefreshToken, result.ProfileImageUrl, roles);
-                await SignInWithCookie(result.FullName, result.Token.AccessToken, roles);
-
-                TempData["Message"] = $"Welcome back, {result.FullName}!";
-                return RedirectToAction("Index", "RecipeUi");
-            }
-            catch
-            {
-                ModelState.AddModelError("", "Login failed. Please try again.");
+                ModelState.AddModelError("", "Invalid email or password.");
                 return View(dto);
             }
+
+            await HandleSuccessfulLogin(result);
+            TempData["Message"] = $"Welcome back, {result.FullName}!";
+            return RedirectToAction("Index", "RecipeUi");
         }
 
-        // ✅ Logout
         public async Task<IActionResult> Logout()
         {
-            HttpContext.Session.Clear();
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Login", "AuthAccount");
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login");
         }
 
-        // 🔹 Helper: Save session
-        private void SaveSession(string? fullName, string accessToken, string? refreshToken, string? profileImageUrl, List<string>? roles)
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Settings()
         {
-            HttpContext.Session.SetString("AccessToken", accessToken);
-            HttpContext.Session.SetString("RefreshToken", refreshToken ?? "");
-            HttpContext.Session.SetString("UserName", fullName ?? "Guest");
-            HttpContext.Session.SetString("UserImage", profileImageUrl ?? "/images/default.png");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            if (roles != null && roles.Count > 0)
+            var userDetails = await _authService.GetUserDetailsAsync(userId);
+            if (userDetails == null) return NotFound("User not found.");
+
+            return View(userDetails);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Settings(UpdateProfile dto, IFormFile? ProfileImage)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!ModelState.IsValid)
             {
-                HttpContext.Session.SetString("UserRoles", string.Join(",", roles));
+                var currentUser = await _authService.GetUserDetailsAsync(userId);
+                return View(currentUser);
             }
-        }
 
-        // 🔹 Helper: Sign in with cookie (with roles)
-        private async Task SignInWithCookie(string? userName, string accessToken, List<string>? roles)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, userName ?? "Guest"),
-                new Claim("AccessToken", accessToken)
-            };
+            string? imagePath = null;
 
-            if (roles != null)
+            // Handle new profile image
+            if (ProfileImage != null)
             {
-                foreach (var role in roles)
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "images", "users");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"{Guid.NewGuid()}_{ProfileImage.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await ProfileImage.CopyToAsync(stream);
+
+                imagePath = $"/images/users/{fileName}";
+
+                // Delete old image
+                var currentUser = await _authService.GetUserDetailsAsync(userId);
+                if (!string.IsNullOrEmpty(currentUser?.ProfileImageUrl))
                 {
-                    claims.Add(new Claim(ClaimTypes.Role, role));
+                    var oldPath = Path.Combine(_env.WebRootPath, currentUser.ProfileImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
                 }
             }
 
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            dto.ProfileImageUrl = imagePath;
 
+            var updateResult = await _authService.UpdateProfileAsync(userId, dto);
+
+            if (updateResult == null || updateResult.Token == null)
+            {
+                ModelState.AddModelError("", "Failed to update profile.");
+                var currentUser = await _authService.GetUserDetailsAsync(userId);
+                return View(currentUser);
+            }
+
+            await HandleSuccessfulLogin(updateResult);
+            TempData["SuccessMessage"] = "Profile updated successfully!";
+            return RedirectToAction("Settings");
+        }
+
+
+        private async Task HandleSuccessfulLogin(AuthResponseDto result)
+        {
+            var userId = ExtractUserIdFromJwt(result.Token.AccessToken);
+            var roles = ExtractRolesFromJwt(result.Token.AccessToken);
+
+            HttpContext.Session.SetString("AccessToken", result.Token.AccessToken);
+            HttpContext.Session.SetString("RefreshToken", result.Token.RefreshToken);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId),
+                new Claim(ClaimTypes.Name, result.FullName ?? "Guest"),
+                new Claim("AccessToken", result.Token.AccessToken),
+                new Claim("RefreshToken", result.Token.RefreshToken ?? ""),
+                new Claim("ProfileImageUrl", result.ProfileImageUrl ?? "/images/default.png")
+            };
+
+            if (roles != null && roles.Any())
+                claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
+                new ClaimsPrincipal(identity),
                 new AuthenticationProperties
                 {
                     IsPersistent = true,
-                    ExpiresUtc = DateTime.UtcNow.AddDays(7)
+                    ExpiresUtc = DateTime.UtcNow.AddDays(7),
+                    AllowRefresh = true
                 });
         }
 
-        // 🔹 Helper: Extract roles from JWT token
         private List<string> ExtractRolesFromJwt(string token)
         {
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
-
-            // Roles might be "role" or ClaimTypes.Role depending on API
-            var roles = jwtToken.Claims
-                .Where(c => c.Type == ClaimTypes.Role || c.Type == "role")
-                .Select(c => c.Value)
-                .ToList();
-
-            return roles;
+            return jwtToken.Claims.Where(c => c.Type == ClaimTypes.Role || c.Type == "role").Select(c => c.Value).ToList();
         }
+
+        private string ExtractUserIdFromJwt(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            return jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value ?? "";
+        }
+
     }
 }

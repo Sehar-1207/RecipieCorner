@@ -1,0 +1,66 @@
+﻿@model RatingDto
+
+@{
+    ViewData["Title"] = $"Rating for {Model.RecipeName}";
+    Layout = "~/Views/Shared/_FormLayout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Rating Details</h4>
+                </div>
+                <div class="card-body">
+                    <h2 class="card-title">
+                        @Model.RecipeName
+                    </h2>
+                    <hr />
+
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/images/default-user.png" : Model.ProfileImageUrl)"
+                             alt="User" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;" />
+                        <div class="ms-3">
+                            <h5 class="mb-0">@Model.UserName</h5>
+                            <small class="text-muted">Rated on @Model.commentAt.ToString("MMMM dd, yyyy")</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        @for (int i = 0; i < Model.Stars; i++)
+                        {
+                            <span class="h4 text-warning">&#9733;</span>
+                        }
+                        @for (int i = Model.Stars; i < 5; i++)
+                        {
+                            <span class="h4 text-muted">&#9734;</span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Comment))
+                    {
+                        <blockquote class="blockquote">
+                            <p class="mb-0">"@Model.Comment"</p>
+                        </blockquote>
+                    }
+                    else
+                    {
+                        <p class="text-muted fst-italic">No comment was provided.</p>
+                    }
+                </div>
+                <div class="card-footer text-center">
+                    <a asp-action="Index" asp-route-recipeId="@Model.RecipeId" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to All Ratings
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+}

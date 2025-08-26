@@ -1,9 +1,11 @@
 ﻿using FoodSecrets.Models;
+using Microsoft.AspNetCore.Http;
 using RecipeCorner.Dtos;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
 
 public class AuthAccountService : IAuthAccountService
 {
@@ -19,83 +21,121 @@ public class AuthAccountService : IAuthAccountService
         _httpContext = httpContext;
     }
 
-    public async Task<RegisterResponseDto?> RegisterAsync(RegisterDto dto)
+    #region Public Authentication Methods
+
+    public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto, string? profileImagePath)
     {
-        var response = await _http.PostAsJsonAsync("api/Auth/register", dto);
+        var payload = new
+        {
+            dto.FullName,
+            dto.Email,
+            dto.Password,
+            ProfileImageUrl = profileImagePath // just the string path
+        };
 
-        if (!response.IsSuccessStatusCode)
-            throw new Exception($"Register failed: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+        var response = await _http.PostAsJsonAsync("api/Auth/register", payload);
+        if (!response.IsSuccessStatusCode) return null;
 
-        var result = await response.Content.ReadFromJsonAsync<RegisterResponseDto>(_jsonOptions);
-
-        if (result?.Token != null)
-            SaveTokens(result.Token);
+        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
+        if (result?.Token != null) SaveTokens(result.Token);
 
         return result;
     }
 
-    public async Task<LoginResponseDto?> LoginAsync(LoginDto dto)
+    public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
     {
         var response = await _http.PostAsJsonAsync("api/Auth/login", dto);
+        if (!response.IsSuccessStatusCode) return null;
 
-        if (!response.IsSuccessStatusCode)
-            throw new Exception($"Login failed: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
-
-        var result = await response.Content.ReadFromJsonAsync<LoginResponseDto>(_jsonOptions);
-
-        if (result?.Token != null)
-            SaveTokens(result.Token);
+        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
+        if (result?.Token != null) SaveTokens(result.Token);
 
         return result;
+    }
+
+    public async Task<UserDetailsDto?> GetUserDetailsAsync(string userId)
+    {
+        AddAuthorizationHeader();
+        var response = await _http.GetAsync("api/Auth/me");
+        if (!response.IsSuccessStatusCode) return null;
+
+        return await response.Content.ReadFromJsonAsync<UserDetailsDto>(_jsonOptions);
+    }
+
+    //public async Task<AuthResponseDto?> UpdateProfileAsync(string userId, UpdateProfile dto)
+    //{
+    //    AddAuthorizationHeader();
+
+    //    // Only send string paths to backend
+    //    var payload = new
+    //    {
+    //        dto.FullName,
+    //        ProfileImageUrl = dto.ProfileImageUrl
+    //    };
+
+    //    var response = await _http.PostAsJsonAsync("api/Auth/update-profile", payload);
+    //    if (!response.IsSuccessStatusCode) return null;
+
+    //    var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
+    //    if (result?.Token != null) SaveTokens(result.Token);
+
+    //    return result;
+    //}
+    public async Task<AuthResponseDto?> UpdateProfileAsync(string userId, UpdateProfile dto)
+    {
+        AddAuthorizationHeader();
+
+        // Create simple JSON payload with string path
+        var response = await _http.PostAsJsonAsync("api/Auth/update-profile", dto);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
+        if (result?.Token != null) SaveTokens(result.Token);
+
+        return result;
+    }
+
+
+    public void Logout()
+    {
+        var session = _httpContext.HttpContext?.Session;
+        session?.Remove("AccessToken");
+        session?.Remove("RefreshToken");
     }
 
     public async Task<TokenResponseDto?> RefreshTokenAsync(string refreshToken)
     {
-        var response = await _http.PostAsJsonAsync("api/Auth/refresh", new { RefreshToken = refreshToken });
-
+        var response = await _http.PostAsJsonAsync("api/Auth/refresh", new { refreshToken });
         if (!response.IsSuccessStatusCode)
-            throw new Exception($"Refresh token failed: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+        {
+            Logout();
+            return null;
+        }
 
-        var wrapper = await response.Content.ReadFromJsonAsync<LoginResponseDto>(_jsonOptions);
+        var tokenString = await response.Content.ReadAsStringAsync();
 
-        if (wrapper?.Token != null)
-            SaveTokens(wrapper.Token);
-
-        return wrapper?.Token;
+        // Assuming your API returns a plain string token, just wrap it
+        return new TokenResponseDto
+        {
+            AccessToken = tokenString,  // or deserialize if JSON
+            RefreshToken = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(30) // adjust as needed
+        };
     }
 
     private void SaveTokens(TokenResponseDto token)
     {
-        var session = _httpContext.HttpContext!.Session;
-        session.SetString("AccessToken", token.AccessToken);
-        session.SetString("RefreshToken", token.RefreshToken);
-        session.SetString("ExpiresAt", token.ExpiresAt.ToString("o"));
+        var session = _httpContext.HttpContext?.Session;
+        session?.SetString("AccessToken", token.AccessToken);
+        session?.SetString("RefreshToken", token.RefreshToken);
     }
 
-    public TokenResponseDto? GetSavedTokens()
+    private void AddAuthorizationHeader()
     {
-        var session = _httpContext.HttpContext!.Session;
-
-        var accessToken = session.GetString("AccessToken");
-        var refreshToken = session.GetString("RefreshToken");
-        var expiresAtStr = session.GetString("ExpiresAt");
-
-        if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
-            return null;
-
-        return new TokenResponseDto
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            ExpiresAt = DateTime.Parse(expiresAtStr!)
-        };
+        var token = _httpContext.HttpContext?.Session.GetString("AccessToken");
+        if (!string.IsNullOrEmpty(token))
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
-    public void Logout()
-    {
-        var session = _httpContext.HttpContext!.Session;
-        session.Remove("AccessToken");
-        session.Remove("RefreshToken");
-        session.Remove("ExpiresAt");
-    }
+    #endregion
 }

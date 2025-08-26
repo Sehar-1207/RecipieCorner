@@ -1,0 +1,44 @@
+﻿@model IEnumerable<InstructionDto>
+
+@{
+    ViewData["Title"] = "Instructions";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3">Recipe Instructions</h2>
+    <a asp-action="Create" asp-controller="Steps" class="btn btn-primary">+ Add New Instruction</a>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <div class="list-group">
+        @foreach (var instruction in Model.OrderBy(i => i.Order))
+        {
+            <div class="list-group-item list-group-item-action d-flex gap-4 py-3">
+                <span class="display-6 text-primary opacity-50">@instruction.Order</span>
+                <div class="flex-grow-1">
+                    <p class="mb-1 fw-bold">@instruction.StepInstruction</p>
+                    @if (!string.IsNullOrWhiteSpace(instruction.Tip))
+                    {
+                        <small class="text-muted"><strong>Tip:</strong> @instruction.Tip</small>
+                    }
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="btn-group" role="group">
+                        @* <a asp-action="Details" asp-route-id="@instruction.Id" class="btn btn-sm btn-light">Details</a> *@
+                        <a asp-action="Edit" asp-route-id="@instruction.Id" class="btn btn-sm btn-light">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@instruction.Id" class="btn btn-sm btn-light text-danger">Delete</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center p-5 border rounded bg-light">
+        <h4>No Instructions Yet</h4>
+        <p class="text-muted">Click 'Add New Instruction' to get started.</p>
+    </div>
+}

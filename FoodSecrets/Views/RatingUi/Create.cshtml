@@ -1,0 +1,126 @@
+﻿@model RatingDto
+
+@{
+    ViewData["Title"] = "Add Your Rating";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<!-- Custom CSS for the design -->
+<style>
+    .rating-card {
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12); /* Softer, more modern shadow */
+        border: none;
+        overflow: hidden;
+    }
+
+    .rating-card-header {
+        background: linear-gradient(to right, #6dd5ed, #2193b0); /* A fresh blue gradient */
+        color: white;
+        padding: 1.5rem;
+    }
+
+    .user-avatar-header {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border: 3px solid white;
+    }
+
+    .step-label {
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #495057; /* A softer, dark grey */
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Interactive Stars CSS (unchanged) */
+    .rating-stars {
+        display: inline-flex;
+        flex-direction: row-reverse;
+    }
+
+        .rating-stars input {
+            display: none;
+        }
+
+        .rating-stars label {
+            font-size: 3rem;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
+        }
+
+            .rating-stars label:hover {
+                transform: scale(1.1);
+            }
+
+        .rating-stars:not(:hover) input:checked ~ label,
+        .rating-stars:hover input:hover ~ label {
+            color: #ffc107;
+        }
+</style>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-7">
+
+            <div class="rating-card">
+
+                <div class="card-body p-4 p-md-5">
+
+                    <!-- Recipe Name Header -->
+                    <div class="text-center mb-5">
+                        <h2 class="card-title fw-bolder">@ViewBag.RecipeName</h2>
+                        <hr class="w-50 mx-auto" />
+                    </div>
+
+                    <form asp-action="Create" asp-controller="RatingUi" method="post">
+                        <input type="hidden" asp-for="RecipeId" />
+
+                        <!-- Step 1: Stars -->
+                        <div class="mb-5">
+                            <label class="step-label mb-2 d-block">Step 1: Choose a rating</label>
+                            <div class="text-center">
+                                <div class="rating-stars">
+                                    <input asp-for="Stars" type="radio" id="star5" value="5" /><label for="star5" title="5 stars">&#9733;</label>
+                                    <input asp-for="Stars" type="radio" id="star4" value="4" /><label for="star4" title="4 stars">&#9733;</label>
+                                    <input asp-for="Stars" type="radio" id="star3" value="3" /><label for="star3" title="3 stars">&#9733;</label>
+                                    <input asp-for="Stars" type="radio" id="star2" value="2" /><label for="star2" title="2 stars">&#9733;</label>
+                                    <input asp-for="Stars" type="radio" id="star1" value="1" /><label for="star1" title="1 star">&#9733;</label>
+                                </div>
+                                <span asp-validation-for="Stars" class="text-danger d-block mt-2"></span>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Comment -->
+                        <div class="mb-5">
+                            <label asp-for="Comment" class="step-label mb-2 d-block">Step 2: Share your thoughts (optional)</label>
+                            <textarea asp-for="Comment" class="form-control" rows="5" placeholder="What did you like? Were there any challenges? Your feedback is valuable!"></textarea>
+                            <span asp-validation-for="Comment" class="text-danger"></span>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-controller="RecipeUi" asp-action="Details" asp-route-id="@Model.RecipeId" class="btn btn-outline-secondary px-4">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary fw-bold px-4">
+                                <i class="fas fa-paper-plane me-2"></i> Submit Rating
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <!-- Font Awesome for the button icon -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+}

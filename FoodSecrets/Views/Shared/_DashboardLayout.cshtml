@@ -1,8 +1,21 @@
 ﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
 @{
-    var userName = HttpContextAccessor.HttpContext?.Session.GetString("UserName") ?? "Guest";
-    var userImage = HttpContextAccessor.HttpContext?.Session.GetString("UserImage") ?? "/Images/student-avatar.jpg";
+    var user = HttpContextAccessor.HttpContext?.User;
+
+    // Name from cookie claims
+    var userName = user?.Identity?.IsAuthenticated == true
+        ? user.Identity?.Name
+        : "Guest";
+
+    // Profile image from claims (fallback to default)
+    var userImage = user?.Claims.FirstOrDefault(c => c.Type == "ProfileImageUrl")?.Value
+        ?? "/images/student-avatar.jpg";
+
+    // Admin check (can still use User.IsInRole("Admin") everywhere)
+    var isAdmin = user?.IsInRole("Admin") == true;
 }
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -29,23 +42,28 @@
                 </a>
             </li>
             <li>
-                <a asp-controller="IngredientUi" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"].ToString() == "IngredientUi" ? "active" : "")">
+                <a asp-controller="IngredientUi" asp-action="Index" class="@(ViewContext.RouteData.Values["action"].ToString() == "Index" && ViewContext.RouteData.Values["controller"].ToString() == "IngredientUi" ? "active" : "")">
                     <i class="fas fa-fw fa-carrot"></i> Ingredients
                 </a>
             </li>
             <li>
-                <a asp-controller="InstructionUi" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"].ToString() == "InstructionUi" ? "active" : "")">
+                <a asp-controller="Steps" asp-action="Index" class="@(ViewContext.RouteData.Values["action"].ToString() == "Index" && ViewContext.RouteData.Values["controller"].ToString() == "Steps" ? "active" : "")">
                     <i class="fas fa-fw fa-list-check"></i> Instructions
                 </a>
             </li>
             <li>
-                <a asp-controller="RatingUi" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"].ToString() == "RatingUi" ? "active" : "")">
+                <a asp-controller="RatingUi" asp-action="Index" class="@(ViewContext.RouteData.Values["action"].ToString() == "Index" && ViewContext.RouteData.Values["controller"].ToString() == "RatingUi" ? "active" : "")">
                     <i class="fas fa-fw fa-star"></i> Ratings
                 </a>
             </li>
             <div class="sidebar-bottom-links">
             <li>
-                <a href="#"><i class="fas fa-fw fa-cog"></i> Settings</a>
+                @* <a href="#"><i class="fas fa-fw fa-cog"></i> Settings</a> *@
+                <form asp-controller="AuthAccount" asp-action="Settings" method="post">
+                    <button type="submit">
+                        <span><i class="fas fa-fw fa-cog"></i> Settings</span>
+                    </button>
+                </form>
             </li>
             <li>
                 <form asp-controller="AuthAccount" asp-action="Logout" method="post">

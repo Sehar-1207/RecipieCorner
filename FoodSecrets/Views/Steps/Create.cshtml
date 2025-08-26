@@ -1,0 +1,211 @@
+﻿@model InstructionDto
+
+@{
+    ViewData["Title"] = "Build a New Instruction";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<!-- Add a reference to Bootstrap Icons if needed -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<style>
+    .instruction-builder {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .builder-header {
+        background-color: #343a40;
+        color: white;
+        padding: 1rem 1.5rem;
+    }
+
+    .task-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .task-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 1.5rem;
+        border-bottom: 1px solid #dee2e6;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+        border-left: 4px solid transparent; /* Prepare for the colored border */
+    }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+    .task-status {
+        font-size: 1.5rem;
+        margin-right: 1.5rem;
+        color: #6c757d; /* Default pending color */
+        transition: color 0.3s ease;
+    }
+
+    .task-content {
+        flex-grow: 1;
+    }
+
+    /* --- NEW CSS FOR COLORING THE LI --- */
+    .task-item.is-complete {
+        background-color: #f0f9f4; /* Subtle light green background */
+        border-left-color: #198754; /* Solid green left border */
+    }
+
+        .task-item.is-complete .task-status {
+            color: #198754; /* Success color for the icon */
+        }
+
+        .task-item.is-complete .task-label {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+    .task-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+        transition: all 0.3s ease;
+    }
+
+    .form-control.builder-input {
+        border: 2px dashed #ced4da;
+        background-color: #fff;
+    }
+
+        .form-control.builder-input:focus {
+            border-style: solid;
+            border-color: #86b7fe;
+            box-shadow: none;
+        }
+
+    .builder-footer {
+        padding: 1rem 1.5rem;
+        background-color: #f8f9fa;
+        text-align: right;
+    }
+</style>
+
+<div class="instruction-builder shadow-sm">
+    <div class="builder-header">
+        <h4 class="mb-0">
+            <i class="bi bi-ui-checks-grid me-2"></i> New Instruction Checklist
+        </h4>
+    </div>
+    <form asp-action="Create" method="post" id="instructionForm">
+        <!-- The 'Id' field should not be here for a Create form -->
+
+        <ul class="task-list">
+            <!-- Task 1: Order -->
+            <li class="task-item" data-task-for="Order">
+                <div class="task-status">
+                    <i class="bi bi-circle"></i>
+                </div>
+                <div class="task-content">
+                    <label asp-for="Order" class="task-label">Set the Step Number</label>
+                    <input asp-for="Order" type="number" class="form-control builder-input required-task" placeholder="e.g., 1" />
+                    <span asp-validation-for="Order" class="text-danger small mt-1 d-block"></span>
+                </div>
+            </li>
+
+            <!-- Task 2: StepInstruction -->
+            <li class="task-item" data-task-for="StepInstruction">
+                <div class="task-status">
+                    <i class="bi bi-circle"></i>
+                </div>
+                <div class="task-content">
+                    <label asp-for="StepInstruction" class="task-label">Write the Instruction</label>
+                    <textarea asp-for="StepInstruction" class="form-control builder-input required-task" rows="4" placeholder="Describe the action to be taken..."></textarea>
+                    <span asp-validation-for="StepInstruction" class="text-danger small mt-1 d-block"></span>
+                </div>
+            </li>
+
+            <!-- Task 3: Tip (Optional) -->
+            <li class="task-item" data-task-for="Tip">
+                <div class="task-status">
+                    <i class="bi bi-circle"></i>
+                </div>
+                <div class="task-content">
+                    <label asp-for="Tip" class="task-label">Add an Optional Tip</label>
+                    <input asp-for="Tip" class="form-control builder-input" placeholder="Share a helpful secret (optional)" />
+                    <span asp-validation-for="Tip" class="text-danger small mt-1 d-block"></span>
+                </div>
+            </li>
+
+            <!-- Task 4: RecipeId (Required for submission) -->
+            <li class="task-item" data-task-for="RecipeId">
+                <div class="task-status">
+                    <i class="bi bi-circle"></i>
+                </div>
+                <div class="task-content">
+                    <label asp-for="RecipeId" class="task-label">Assign to Recipe</label>
+                    <input asp-for="RecipeId" type="number" class="form-control builder-input required-task" placeholder="Enter the parent Recipe ID" />
+                    <span asp-validation-for="RecipeId" class="text-danger small mt-1 d-block"></span>
+                </div>
+            </li>
+        </ul>
+    </form>
+    <div class="builder-footer border-top">
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" form="instructionForm" id="submitBtn" class="btn btn-primary" disabled>
+            <i class="bi bi-plus-lg me-1"></i> Add Instruction
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('instructionForm');
+            const requiredInputs = form.querySelectorAll('.required-task');
+            const submitBtn = document.getElementById('submitBtn');
+
+            // Update the visual state for any input (required or optional)
+            function updateTaskState(input) {
+                const taskItem = input.closest('.task-item');
+                const icon = taskItem.querySelector('.task-status i');
+
+                if (input.value.trim()) {
+                    taskItem.classList.add('is-complete');
+                    icon.classList.remove('bi-circle');
+                    icon.classList.add('bi-check-circle-fill');
+                } else {
+                    taskItem.classList.remove('is-complete');
+                    icon.classList.remove('bi-check-circle-fill');
+                    icon.classList.add('bi-circle');
+                }
+            }
+
+            // Check if ALL REQUIRED fields are filled to enable the submit button
+            function checkRequiredCompletion() {
+                let allRequiredFilled = true;
+                requiredInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        allRequiredFilled = false;
+                    }
+                });
+                submitBtn.disabled = !allRequiredFilled;
+            }
+
+            form.querySelectorAll('input, textarea').forEach(input => {
+                input.addEventListener('input', () => {
+                    updateTaskState(input);
+                    checkRequiredCompletion();
+                });
+
+                // Run on page load in case of postback with values
+                updateTaskState(input);
+            });
+
+            // Initial check on page load
+            checkRequiredCompletion();
+        });
+    </script>
+}

@@ -1,0 +1,21 @@
+﻿@model InstructionDto
+
+@{
+    ViewData["Title"] = "Instruction Details";
+    Layout = "~/Views/Shared/_FormLayout.cshtml";
+}
+
+<h2>Instruction Details</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Step @Model.Order</h5>
+        <p class="card-text"><strong>Instruction:</strong> @Model.StepInstruction</p>
+        <p class="card-text"><strong>Tip:</strong> @Model.Tip</p>
+        <p class="card-text"><strong>Recipe ID:</strong> @Model.RecipeId</p>
+    </div>
+</div>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+<a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>

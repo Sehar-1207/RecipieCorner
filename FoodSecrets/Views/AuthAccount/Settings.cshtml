@@ -1,0 +1,33 @@
+﻿@* @model UpdateProfile
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<h2>Settings</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<form asp-action="Settings" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Profile Image</label>
+        <br />
+        <img src="@Model.ProfileImageUrl ?? " /images/default.png"" alt="Profile Image" width="100" height="100" class="mb-2" />
+        <input asp-for="ProfileImage" type="file" class="form-control" />
+        <span asp-validation-for="ProfileImage" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update Profile</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+} *@
