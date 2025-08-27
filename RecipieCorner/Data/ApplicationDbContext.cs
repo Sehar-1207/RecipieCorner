@@ -15,9 +15,14 @@ namespace RecipeCorner.Data
         public DbSet<Instruction> Instructions { get; set; }
         public DbSet<Rating> Ratings { get; set; }
 
-        //protected override void OnModelCreating(ModelBuilder builder)
-        //{
-        //    base.OnModelCreating(builder);
-        //}
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+            builder.Entity<Rating>(entity =>
+            {
+                entity.Property(r => r.commentAt)
+                      .HasDefaultValueSql("GETUTCDATE()"); // For SQL Server
+            });
+        }
     }
 }

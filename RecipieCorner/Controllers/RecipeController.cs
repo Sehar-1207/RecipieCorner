@@ -36,14 +36,18 @@ public class RecipeController : ControllerBase
     }
 
     // GET: api/recipe/5
+    // In RecipeController.cs
+
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetDetails(int id)
     {
+        // ✅ Use the new string-based include to load nested User data
         var recipe = await _unitOfWork.recipes.GetByIdWithIncludeAsync(id,
-            r => r.Ingredients,
-            r => r.Instructions,
-            r => r.Ratings);
+            "Ingredients",
+            "Instructions",
+            "Ratings.User" // <-- This now loads Ratings AND the User for each rating
+        );
 
         if (recipe == null) return NotFound();
 
@@ -68,12 +72,17 @@ public class RecipeController : ControllerBase
                 Order = i.Order,
                 StepInstruction = i.StepInstruction
             }),
+
+            // ✅ This mapping will now work correctly
             Ratings = recipe.Ratings.Select(r => new RatingDto
             {
                 Id = r.Id,
                 UserId = r.UserId,
                 Stars = r.Stars,
-                Comment = r.Comment
+                Comment = r.Comment,
+                commentAt = r.commentAt,
+                UserName = r.User?.UserName, // This will have a value now
+                ProfileImageUrl = r.User?.ProfileImageUrl // This will also have a value
             })
         };
 

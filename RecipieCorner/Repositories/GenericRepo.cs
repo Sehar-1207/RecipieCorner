@@ -66,5 +66,14 @@ namespace RecipeCorner.Repositories
             }
             return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
         }
+        public async Task<T?> GetByIdWithIncludeAsync(int id, params string[] includeProperties)
+        {
+            IQueryable<T> query = _dbSet;
+            foreach (var includeProperty in includeProperties)
+            {
+                query = query.Include(includeProperty);
+            }
+            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id);
+        }
     }
 }

@@ -93,7 +93,7 @@
             <h3 class="recipe-section-title mb-0">Ratings & Reviews</h3>
             @if (User.Identity.IsAuthenticated)
             {
-                <a asp-controller="RatingUi" asp-action="Create" asp-route-recipeId="@Model.Id" class="btn btn-outline-primary">
+                <a asp-controller="RatingUi" asp-action="Create" asp-route-recipeId="@Model.Id" class="btn btn-outline-info">
                     <i class="fas fa-plus me-1"></i> Add Rating
                 </a>
             }
@@ -102,27 +102,17 @@
         @if (Model.Ratings != null && Model.Ratings.Any())
         {
             <div class="list-group">
-                @foreach (var r in Model.Ratings)
+                @foreach (var r in Model.Ratings.OrderByDescending(rating => rating.commentAt))
                 {
                     <div class="list-group-item list-group-item-action flex-column align-items-start p-3">
                         <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">
-                                @{
-                                    // Check if the review's UserId matches the logged-in user's ID
-                                    bool isCurrentUser = (r.UserId == currentUserId);
-                                }
-                                @if (isCurrentUser)
-                                {
-                                    <img src="@User.FindFirstValue("ProfileImageUrl")" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" alt="User Profile Image">
-                                    <strong>@User.Identity.Name</strong>
+                            <h5 class="mb-1 d-flex align-items-center">
+                                <img src="@(string.IsNullOrEmpty(r.ProfileImageUrl) ? "/images/default.png" : r.ProfileImageUrl)" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" alt="User Profile Image">
+                                <strong>@r.UserName</strong>
 
-                                    <span class="badge bg-success ms-1">You</span>
-                                }
-                                else
+                                @if (r.UserId == currentUserId)
                                 {
-                                    // Fallback for other users since we don't have their name from the DTO
-                                    <img src="/images/default.png" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" alt="Default User Image">
-                                    <strong>A Foodie</strong>
+                                    <span class="badge bg-success ms-1">You</span>
                                 }
                             </h5>
                             <span class="rating-stars text-warning">
@@ -132,9 +122,13 @@
                                 }
                             </span>
                         </div>
-                        <p class="mb-2">@r.Comment</p>
 
-                        @if (isCurrentUser || User.IsInRole("Admin"))
+                        <!-- ✅ THIS LINE IS UPDATED -->
+                        <small class="text-muted">@r.commentAt.ToString("MMMM dd, yyyy")</small>
+
+                        <p class="mb-2 mt-1">@r.Comment</p>
+
+                        @if (r.UserId == currentUserId || User.IsInRole("Admin"))
                         {
                             <div class="text-end">
                                 <a asp-controller="RatingUi" asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Edit</a>

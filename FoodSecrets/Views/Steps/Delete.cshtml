@@ -1,70 +1,66 @@
 ﻿@model InstructionDto
 
 @{
-    ViewData["Title"] = "Delete Confirmation";
+    ViewData["Title"] = "Delete Instruction";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
 <!-- Add a reference to Bootstrap Icons if needed -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
-<div class="row justify-content-center">
+<div class="row justify-content-center mt-5">
     <div class="col-lg-8">
-        <div class="card border-danger shadow-lg">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Delete Confirmation
-                </h4>
-            </div>
-            <div class="card-body p-4">
-                <p class="lead">
-                    Are you sure you want to permanently delete this instruction?
-                </p>
-                <p class="text-muted">This action cannot be undone. Please review the details below before proceeding.</p>
+        
+        <!-- Using an Alert for a more focused, cautionary feel -->
+        <div class="alert alert-danger shadow-sm p-4" role="alert">
+            <h4 class="alert-heading">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i>Hold on a second...
+            </h4>
+            <p>You are about to permanently delete an instruction. This is an irreversible action, and the data will be gone forever.</p>
+            
+            <hr>
 
-                <hr class="my-4">
+            <div class="p-3 my-3 bg-danger-subtle border border-danger-subtle rounded">
+                <p class="text-danger-emphasis small fw-bold mb-2 text-uppercase">You will be deleting the following:</p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Step:</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge text-bg-primary rounded-pill fs-6">@Model.Order</span>
+                    </dd>
 
-                <!-- Read-only display of the data to be deleted -->
-                <h5 class="mb-3">Instruction to be Deleted:</h5>
-                <div class="bg-light border rounded p-3">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">Step Number:</dt>
-                        <dd class="col-sm-9">
-                            <span class="badge bg-primary fs-6">@Model.Order</span>
+                    <dt class="col-sm-3 mt-2">Instruction:</dt>
+                    <dd class="col-sm-9 mt-2">
+                        <p class="mb-0">"@Model.StepInstruction"</p>
+                    </dd>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Tip))
+                    {
+                        <dt class="col-sm-3 mt-2">Tip:</dt>
+                        <dd class="col-sm-9 mt-2 text-muted">
+                            <em>@Model.Tip</em>
                         </dd>
-
-                        <dt class="col-sm-3 mt-2">Instruction:</dt>
-                        <dd class="col-sm-9 mt-2">
-                            <blockquote class="mb-0">
-                                "@Model.StepInstruction"
-                            </blockquote>
-                        </dd>
-
-                        @if (!string.IsNullOrWhiteSpace(Model.Tip))
-                        {
-                            <dt class="col-sm-3 mt-2">Tip:</dt>
-                            <dd class="col-sm-9 mt-2 text-muted fst-italic">
-                                @Model.Tip
-                            </dd>
-                        }
-                    </dl>
-                </div>
+                    }
+                </dl>
             </div>
-            <div class="card-footer bg-light text-end p-3">
-                <form asp-action="Delete" method="post" class="d-inline">
-                    <!-- This hidden input is crucial. It tells the controller which item to delete. -->
+
+            <p class="mb-0">Please confirm that you want to proceed.</p>
+
+            <div class="mt-4 d-flex justify-content-end">
+                <form asp-action="Delete" method="post">
+                    <!-- Crucial hidden input to identify the item -->
                     <input type="hidden" asp-for="Id" />
 
                     <a asp-action="Index" class="btn btn-secondary me-2">
-                        <i class="bi bi-arrow-left-circle me-1"></i> No, Go Back
+                        <i class="bi bi-x-circle me-1"></i> Cancel
                     </a>
-
+                    
                     <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash-fill me-1"></i> Yes, Delete This Instruction
+                        <i class="bi bi-trash3-fill me-1"></i> Permanently Delete
                     </button>
                 </form>
             </div>
         </div>
+
     </div>
 </div>
 

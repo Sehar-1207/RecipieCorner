@@ -165,6 +165,7 @@ namespace RecipeCorner.Controllers
             });
         }
 
+
         // ✅ Update Profile (with token refresh + user info)
         [Authorize]
         [HttpPut("update-profile")]
@@ -176,24 +177,41 @@ namespace RecipeCorner.Controllers
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return NotFound();
 
-            // Update fields
-            user.FullName = dto.FullName;
-            // Only update the image if a new one was provided in the DTO
+            bool hasChanges = false;
+
+            // ✅ CHANGED: Conditional Update for FullName
+            // Only update the name if the DTO provides a new, non-empty value
+            // that is different from the current name.
+            if (!string.IsNullOrWhiteSpace(dto.FullName) && user.FullName != dto.FullName)
+            {
+                user.FullName = dto.FullName;
+                hasChanges = true;
+            }
+
+            // ✅ CHANGED: Conditional Update for ProfileImageUrl
+            // Only update the image if a new image URL was provided.
             if (!string.IsNullOrEmpty(dto.ProfileImageUrl))
             {
                 user.ProfileImageUrl = dto.ProfileImageUrl;
+                hasChanges = true;
             }
 
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded) return BadRequest(result.Errors);
+            // Only hit the database if there are actual changes to save.
+            if (hasChanges)
+            {
+                var result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded) return BadRequest(result.Errors);
+            }
 
-            // Refresh tokens (same pattern as login)
+            // Now, generate new tokens and return the updated user state,
+            // regardless of whether a database write occurred. This ensures the
+            // client's user context is always fresh.
             var accessToken = await _jwt.CreateAccessTokenAsync(user);
             var refreshToken = _jwt.GenerateRefreshToken();
 
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-            await _userManager.UpdateAsync(user);
+            await _userManager.UpdateAsync(user); // This second update saves the new refresh token
 
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault() ?? "User";

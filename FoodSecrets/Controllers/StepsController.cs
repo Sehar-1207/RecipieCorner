@@ -19,16 +19,6 @@ namespace FoodSecrets.Controllers
             return View(instructions); // Pass to the view
         }
 
-        // Details view for a single instruction
-        //public async Task<IActionResult> Details(int id)
-        //{
-        //    var instruction = await _instructionService.GetByIdAsync(id);
-        //    if (instruction == null) return NotFound();
-
-        //    return View(instruction);
-        //}
-
-        // Create instruction form
         public IActionResult Create()
         {
             return View();

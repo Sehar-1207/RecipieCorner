@@ -95,5 +95,57 @@ namespace RecipeCorner.Controllers
 
             return Ok(ToDto(rating));
         }
+
+        [HttpPost]
+        [Authorize] // A user must be logged in to create a rating.
+        public async Task<IActionResult> Create([FromBody] RatingDto dto)
+        {
+            // 1. Basic Model Validation (e.g., are stars between 1 and 5?)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // 2. Get the authenticated user's ID from their token/cookie.
+            // NEVER trust a UserId sent from the client.
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                // This case should be rare due to the [Authorize] attribute, but it's a good safeguard.
+                return Unauthorized("User ID claim not found in token.");
+            }
+
+            // 3. Business Rule: Check if the user has already rated this recipe.
+            var existingRating = await _unitOfWork.rating
+                .FindAsync(r => r.RecipeId == dto.RecipeId && r.UserId == userId);
+
+            if (existingRating.Any())
+            {
+                return Conflict("You have already submitted a rating for this recipe.");
+            }
+
+            // 4. Create the new database entity from the DTO.
+            var newRating = new Rating
+            {
+                Stars = dto.Stars,
+                Comment = dto.Comment,
+                RecipeId = dto.RecipeId,
+                UserId = userId, // Set the UserId from the authenticated user.
+                commentAt = DateTime.UtcNow
+            };
+
+            // 5. Save the new rating to the database.
+            await _unitOfWork.rating.AddAsync(newRating);
+            await _unitOfWork.SaveAsync();
+
+            // 6. Return a proper RESTful response.
+            // Fetch the newly created rating again, this time with its navigation properties (User, Recipe)
+            // so we can return the complete object to the client.
+            var createdRatingWithDetails = await _unitOfWork.rating.GetByIdWithIncludeAsync(newRating.Id, r => r.User, r => r.Recipe);
+
+            // Use CreatedAtAction to return a 201 Created status code.
+            // This also adds a "Location" header to the response, pointing to the new resource's URL.
+            return CreatedAtAction(nameof(GetById), new { id = newRating.Id }, ToDto(createdRatingWithDetails));
+        }
     }
 }

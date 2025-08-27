@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<InstructionDto>
 
 @{
-    ViewData["Title"] = "Instructions";
+    ViewData["Title"] = "Instructions by Recipe";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
@@ -10,35 +10,65 @@
     <a asp-action="Create" asp-controller="Steps" class="btn btn-primary">+ Add New Instruction</a>
 </div>
 
-@if (Model != null && Model.Any())
-{
-    <div class="list-group">
-        @foreach (var instruction in Model.OrderBy(i => i.Order))
-        {
-            <div class="list-group-item list-group-item-action d-flex gap-4 py-3">
-                <span class="display-6 text-primary opacity-50">@instruction.Order</span>
-                <div class="flex-grow-1">
-                    <p class="mb-1 fw-bold">@instruction.StepInstruction</p>
-                    @if (!string.IsNullOrWhiteSpace(instruction.Tip))
-                    {
-                        <small class="text-muted"><strong>Tip:</strong> @instruction.Tip</small>
-                    }
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="btn-group" role="group">
-                        @* <a asp-action="Details" asp-route-id="@instruction.Id" class="btn btn-sm btn-light">Details</a> *@
-                        <a asp-action="Edit" asp-route-id="@instruction.Id" class="btn btn-sm btn-light">Edit</a>
-                        <a asp-action="Delete" asp-route-id="@instruction.Id" class="btn btn-sm btn-light text-danger">Delete</a>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
-}
-else
+@if (Model == null || !Model.Any())
 {
     <div class="text-center p-5 border rounded bg-light">
         <h4>No Instructions Yet</h4>
         <p class="text-muted">Click 'Add New Instruction' to get started.</p>
     </div>
+}
+else
+{
+    var instructionsByRecipe = Model.GroupBy(i => i.RecipeId).OrderBy(g => g.Key);
+    var firstRecipe = true;
+
+    <div class="accordion" id="recipeAccordion">
+        @foreach (var recipeGroup in instructionsByRecipe)
+        {
+            var isExpanded = firstRecipe; // Only the first item is expanded
+            var collapseId = $"collapse{recipeGroup.Key}";
+            var headerId = $"header{recipeGroup.Key}";
+
+            <div class="accordion-item shadow-sm mb-3 border-0">
+                <h2 class="accordion-header" id="@headerId">
+                    <button class="accordion-button @(isExpanded ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@isExpanded.ToString().ToLower()" aria-controls="@collapseId">
+                        <strong>Recipe ID: @recipeGroup.Key</strong>
+                        <span class="badge bg-secondary ms-3">@recipeGroup.Count() Steps</span>
+                    </button>
+                </h2>
+                <div id="@collapseId" class="accordion-collapse collapse @(isExpanded ? "show" : "")" aria-labelledby="@headerId" data-bs-parent="#recipeAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var instruction in recipeGroup.OrderBy(i => i.Order))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-primary rounded-pill me-3 p-2">@instruction.Order</span>
+                                        <div>
+                                            @instruction.StepInstruction
+                                            @if (!string.IsNullOrWhiteSpace(instruction.Tip))
+                                            {
+                                                <small class="d-block text-muted fst-italic mt-1">
+                                                    <i class="bi bi-lightbulb"></i> @instruction.Tip
+                                                </small>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Edit" asp-controller="Steps" asp-route-id="@instruction.Id" class="btn btn-sm btn-outline-info" title="Edit"><i class="bi bi-pencil"></i></a>
+                                        <a asp-action="Delete" asp-controller="Steps" asp-route-id="@instruction.Id" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            firstRecipe = false; // Ensure subsequent items are collapsed
+        }
+    </div>
+}
+@section Scripts{
+    <!-- ✅ ADD THIS LINE for Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 }

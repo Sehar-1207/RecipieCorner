@@ -52,7 +52,7 @@ namespace FoodSecrets.Controllers
 
             try
             {
-                var payload = new { dto.RecipeId, dto.Stars, dto.Comment };
+                var payload = new { dto.RecipeId, dto.Stars, dto.Comment , dto.commentAt};
                 var result = await _apiClient.PostAsync<RatingDto>("api/Rating", payload);
 
                 if (result == null)
