@@ -1,33 +1,63 @@
-﻿@* @model UpdateProfile
+﻿@model UpdateProfile
 @{
     ViewData["Title"] = "Settings";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
 }
 
-<h2>Settings</h2>
+<div class="container" style="max-width: 600px;">
+    <h2>Settings</h2>
+    <p class="text-muted">Manage your account settings and profile information.</p>
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-}
+    @* @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    } *@
 
-<form asp-action="Settings" method="post" enctype="multipart/form-data">
-    <div class="mb-3">
-        <label asp-for="FullName" class="form-label"></label>
-        <input asp-for="FullName" class="form-control" />
-        <span asp-validation-for="FullName" class="text-danger"></span>
-    </div>
+    <form asp-action="Settings" method="post" enctype="multipart/form-data">
+        @* This hidden field is important to retain the existing image URL if no new file is chosen *@
+        <input type="hidden" asp-for="ProfileImageUrl" />
 
-    <div class="mb-3">
-        <label class="form-label">Profile Image</label>
-        <br />
-        <img src="@Model.ProfileImageUrl ?? " /images/default.png"" alt="Profile Image" width="100" height="100" class="mb-2" />
-        <input asp-for="ProfileImage" type="file" class="form-control" />
-        <span asp-validation-for="ProfileImage" class="text-danger"></span>
-    </div>
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
 
-    <button type="submit" class="btn btn-primary">Update Profile</button>
-</form>
+                <!-- Profile Image -->
+                <div class="mb-4 text-center">
+                    <img src="@Model.ProfileImageUrl"
+                         alt="Profile Image"
+                         class="rounded-circle mb-2"
+                         style="width:120px; height:120px; object-fit:cover; border: 3px solid #eee;" />
+
+                    <div class="mt-2">
+                        <label for="ProfileImage" class="form-label fw-bold">Change Profile Picture</label>
+                        <input asp-for="ProfileImage" class="form-control" type="file" accept="image/*" />
+                    </div>
+                </div>
+
+                <!-- Full Name -->
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label fw-bold">Full Name</label>
+                    <input asp-for="FullName" class="form-control" placeholder="Enter your name " />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+
+                <!-- Email (disabled) -->
+                <div class="mb-4">
+                    <label asp-for="Email" class="form-label fw-bold">Email</label>
+                    <input asp-for="Email" class="form-control" disabled />
+                    <small class="form-text text-muted">Email address cannot be changed.</small>
+                </div>
+
+                <!-- Save Button -->
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary px-4 py-2">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-} *@
+}

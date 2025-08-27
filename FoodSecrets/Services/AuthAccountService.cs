@@ -1,141 +1,112 @@
 ﻿using FoodSecrets.Models;
-using Microsoft.AspNetCore.Http;
 using RecipeCorner.Dtos;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Security.Claims; // ✅ ADDED: For accessing claims
+using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
-public class AuthAccountService : IAuthAccountService
+namespace FoodSecrets.Services
 {
-    private readonly HttpClient _http;
-    private readonly JsonSerializerOptions _jsonOptions;
-    private readonly IHttpContextAccessor _httpContext;
-
-    public AuthAccountService(IHttpClientFactory httpClientFactory, IConfiguration config, IHttpContextAccessor httpContext)
+    public class AuthAccountService : IAuthAccountService
     {
-        _http = httpClientFactory.CreateClient();
-        _http.BaseAddress = new Uri(config["ApiSettings:BaseUrl"]);
-        _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        _httpContext = httpContext;
-    }
+        private readonly HttpClient _httpClient;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly JsonSerializerOptions _jsonOptions;
 
-    #region Public Authentication Methods
-
-    public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto, string? profileImagePath)
-    {
-        var payload = new
+        public AuthAccountService(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
         {
-            dto.FullName,
-            dto.Email,
-            dto.Password,
-            ProfileImageUrl = profileImagePath // just the string path
-        };
-
-        var response = await _http.PostAsJsonAsync("api/Auth/register", payload);
-        if (!response.IsSuccessStatusCode) return null;
-
-        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
-        if (result?.Token != null) SaveTokens(result.Token);
-
-        return result;
-    }
-
-    public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
-    {
-        var response = await _http.PostAsJsonAsync("api/Auth/login", dto);
-        if (!response.IsSuccessStatusCode) return null;
-
-        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
-        if (result?.Token != null) SaveTokens(result.Token);
-
-        return result;
-    }
-
-    public async Task<UserDetailsDto?> GetUserDetailsAsync(string userId)
-    {
-        AddAuthorizationHeader();
-        var response = await _http.GetAsync("api/Auth/me");
-        if (!response.IsSuccessStatusCode) return null;
-
-        return await response.Content.ReadFromJsonAsync<UserDetailsDto>(_jsonOptions);
-    }
-
-    //public async Task<AuthResponseDto?> UpdateProfileAsync(string userId, UpdateProfile dto)
-    //{
-    //    AddAuthorizationHeader();
-
-    //    // Only send string paths to backend
-    //    var payload = new
-    //    {
-    //        dto.FullName,
-    //        ProfileImageUrl = dto.ProfileImageUrl
-    //    };
-
-    //    var response = await _http.PostAsJsonAsync("api/Auth/update-profile", payload);
-    //    if (!response.IsSuccessStatusCode) return null;
-
-    //    var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
-    //    if (result?.Token != null) SaveTokens(result.Token);
-
-    //    return result;
-    //}
-    public async Task<AuthResponseDto?> UpdateProfileAsync(string userId, UpdateProfile dto)
-    {
-        AddAuthorizationHeader();
-
-        // Create simple JSON payload with string path
-        var response = await _http.PostAsJsonAsync("api/Auth/update-profile", dto);
-        if (!response.IsSuccessStatusCode) return null;
-
-        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
-        if (result?.Token != null) SaveTokens(result.Token);
-
-        return result;
-    }
-
-
-    public void Logout()
-    {
-        var session = _httpContext.HttpContext?.Session;
-        session?.Remove("AccessToken");
-        session?.Remove("RefreshToken");
-    }
-
-    public async Task<TokenResponseDto?> RefreshTokenAsync(string refreshToken)
-    {
-        var response = await _http.PostAsJsonAsync("api/Auth/refresh", new { refreshToken });
-        if (!response.IsSuccessStatusCode)
-        {
-            Logout();
-            return null;
+            _httpClient = httpClient;
+            _httpContextAccessor = httpContextAccessor;
+            _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         }
 
-        var tokenString = await response.Content.ReadAsStringAsync();
-
-        // Assuming your API returns a plain string token, just wrap it
-        return new TokenResponseDto
+        public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto, string? profileImageUrl)
         {
-            AccessToken = tokenString,  // or deserialize if JSON
-            RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(30) // adjust as needed
-        };
-    }
+            dto.ProfileImage = profileImageUrl;
 
-    private void SaveTokens(TokenResponseDto token)
-    {
-        var session = _httpContext.HttpContext?.Session;
-        session?.SetString("AccessToken", token.AccessToken);
-        session?.SetString("RefreshToken", token.RefreshToken);
-    }
+            var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("api/Auth/register", content);
 
-    private void AddAuthorizationHeader()
-    {
-        var token = _httpContext.HttpContext?.Session.GetString("AccessToken");
-        if (!string.IsNullOrEmpty(token))
-            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-    }
+            if (!response.IsSuccessStatusCode) return null;
 
-    #endregion
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<AuthResponseDto>(json, _jsonOptions);
+        }
+
+        public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
+        {
+            var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("api/Auth/login", content);
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<AuthResponseDto>(json, _jsonOptions);
+        }
+
+        public async Task<UserDetailsDto?> GetUserDetailsAsync(string userId)
+        {
+            AddJwtHeader(); // This method is now fixed to be reliable
+
+            var response = await _httpClient.GetAsync($"api/Auth/me");
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<UserDetailsDto>(json, _jsonOptions);
+        }
+
+        public async Task<AuthResponseDto?> UpdateProfileAsync(string userId, UpdateProfile dto)
+        {
+            AddJwtHeader();
+
+            var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PutAsync($"api/Auth/update-profile", content);
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<AuthResponseDto>(json, _jsonOptions);
+        }
+
+        // 🔹 Refresh Token
+        public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
+        {
+            var content = new StringContent(JsonSerializer.Serialize(refreshToken), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("api/Auth/refresh", content);
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            // Deserialization happens here, the HandleSuccessfulLogin method will update session/cookie
+            return JsonSerializer.Deserialize<AuthResponseDto>(json, _jsonOptions);
+        }
+
+        // 🔹 Logout
+        public async Task<bool> LogoutAsync()
+        {
+            AddJwtHeader(); // Add auth token to invalidate the refresh token on the API side
+
+            var response = await _httpClient.PostAsync("api/Auth/logout", null);
+
+            // Clearing local session/cookie is handled by the controller's SignOutAsync
+            return response.IsSuccessStatusCode;
+        }
+
+        // ✅ CHANGED: This is the key fix.
+        // It now gets the token from the user's claims principal (stored in the cookie),
+        // which is far more reliable than the session state.
+        private void AddJwtHeader()
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = null; // Clear previous headers
+            var token = _httpContextAccessor.HttpContext?
+                                           .User.Claims
+                                           .FirstOrDefault(c => c.Type == "AccessToken")?
+                                           .Value;
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+        }
+    }
 }

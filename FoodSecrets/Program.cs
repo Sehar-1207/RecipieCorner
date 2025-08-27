@@ -14,7 +14,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
 // ✅ Add your services as Scoped
-builder.Services.AddScoped<IAuthAccountService, AuthAccountService>();
+builder.Services.AddHttpClient<IAuthAccountService, AuthAccountService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"]); // your API base URL
+});
+
 builder.Services.AddScoped<IRecipeMvc, RecipeService>();
 builder.Services.AddScoped<IIngredientMvc, IngredientService>();
 builder.Services.AddScoped<IinstructionsService, InstructionService>();

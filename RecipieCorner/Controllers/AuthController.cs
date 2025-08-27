@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using RecipeCorner.Dtos;
+using RecipeCorner.Interfaces;
 using RecipeCorner.Models;
 using RecipeCorner.Services;
 using System.Security.Claims;
@@ -18,31 +18,27 @@ namespace RecipeCorner.Controllers
         private readonly JwtTokenService _jwt;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
-        private readonly object _signInManager;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public AuthController(UserManager<ApplicationUser> userManager,
-                              RoleManager<IdentityRole> roleManager,
-                              JwtTokenService jwt,
-                              IConfiguration config,
-                              IWebHostEnvironment env)
+        public AuthController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
+                              JwtTokenService jwt, IConfiguration config, IWebHostEnvironment env, IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _jwt = jwt;
             _config = config;
             _env = env;
+            _unitOfWork = unitOfWork;
         }
 
+        // ✅ Register
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            // ✅ Assign Role before CreateAsync
-            var roleToAssign = "User"; // default
+            var roleToAssign = "User";
             var adminSecret = _config["AdminSecretCode"];
             if (!string.IsNullOrEmpty(dto.SecretKey) && dto.SecretKey.Trim() == adminSecret?.Trim())
-            {
                 roleToAssign = "Admin";
-            }
 
             var user = new ApplicationUser
             {
@@ -50,26 +46,25 @@ namespace RecipeCorner.Controllers
                 Email = dto.Email,
                 FullName = dto.FullName,
                 ProfileImageUrl = dto.ProfileImage,
-                Role = roleToAssign  // ✅ Role set here
+                Role = roleToAssign
             };
 
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded) return BadRequest(result.Errors);
 
-            // ✅ Ensure roles exist in Identity tables
-            await EnsureRolesExistAsync("User", "Admin");
+            // Ensure role exists
+            if (!await _roleManager.RoleExistsAsync(roleToAssign))
+                await _roleManager.CreateAsync(new IdentityRole(roleToAssign));
 
-            // ✅ Add role to Identity system
             await _userManager.AddToRoleAsync(user, roleToAssign);
 
-            // JWT + Refresh Token
+            // Issue tokens
             var accessToken = await _jwt.CreateAccessTokenAsync(user);
             var refreshToken = _jwt.GenerateRefreshToken();
+
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await _userManager.UpdateAsync(user);
-
-            var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!));
 
             return Ok(new
             {
@@ -77,18 +72,16 @@ namespace RecipeCorner.Controllers
                 {
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
-                    ExpiresAt = expiresAt
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!))
                 },
                 user.FullName,
                 user.Email,
                 user.ProfileImageUrl,
-                user.Role   // ✅ Return role to client
+                user.Role
             });
         }
 
-
-
-        // In RecipeCorner.Controllers.AuthController.Login
+        // ✅ Login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
@@ -105,11 +98,8 @@ namespace RecipeCorner.Controllers
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await _userManager.UpdateAsync(user);
 
-            var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!));
-
-            // ✅ get first role (or join multiple if you support that)
             var roles = await _userManager.GetRolesAsync(user);
-            var role = roles.FirstOrDefault() ?? user.Role ?? "User";
+            var role = roles.FirstOrDefault() ?? "User";
 
             return Ok(new
             {
@@ -117,16 +107,16 @@ namespace RecipeCorner.Controllers
                 {
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
-                    ExpiresAt = expiresAt
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!))
                 },
                 user.FullName,
                 user.Email,
                 user.ProfileImageUrl,
-                Role = role                    // ✅ include role
+                Role = role
             });
         }
 
-
+        // ✅ Refresh Token
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] string refreshToken)
         {
@@ -141,15 +131,13 @@ namespace RecipeCorner.Controllers
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await _userManager.UpdateAsync(user);
 
-            var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!));
-
             return Ok(new
             {
                 Token = new TokenDto
                 {
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshToken,
-                    ExpiresAt = expiresAt
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!))
                 },
                 user.FullName,
                 user.Email,
@@ -157,16 +145,7 @@ namespace RecipeCorner.Controllers
             });
         }
 
-        private async Task EnsureRolesExistAsync(params string[] roles)
-        {
-            foreach (var r in roles)
-            {
-                if (!await _roleManager.RoleExistsAsync(r))
-                    await _roleManager.CreateAsync(new IdentityRole(r));
-            }
-        }
-
-        // GET api/Auth/me
+        // ✅ Get Current User
         [Authorize]
         [HttpGet("me")]
         public async Task<ActionResult<UserDetailsDto>> GetCurrentUser()
@@ -186,10 +165,10 @@ namespace RecipeCorner.Controllers
             });
         }
 
-        // POST api/Auth/update-profile
+        // ✅ Update Profile (with token refresh + user info)
         [Authorize]
-        [HttpPost("update-profile")]
-        public async Task<ActionResult<UserDetailsDto>> UpdateProfile([FromBody] UpdateProfile dto)
+        [HttpPut("update-profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfile dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
@@ -197,11 +176,9 @@ namespace RecipeCorner.Controllers
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return NotFound();
 
-            // Update FullName
+            // Update fields
             user.FullName = dto.FullName;
-
-            // Update ProfileImageUrl if provided (uploaded from MVC)
-
+            // Only update the image if a new one was provided in the DTO
             if (!string.IsNullOrEmpty(dto.ProfileImageUrl))
             {
                 user.ProfileImageUrl = dto.ProfileImageUrl;
@@ -210,13 +187,50 @@ namespace RecipeCorner.Controllers
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded) return BadRequest(result.Errors);
 
-            return Ok(new UserDetailsDto
+            // Refresh tokens (same pattern as login)
+            var accessToken = await _jwt.CreateAccessTokenAsync(user);
+            var refreshToken = _jwt.GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _userManager.UpdateAsync(user);
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? "User";
+
+            // Return updated user details + tokens
+            return Ok(new
             {
-                Id = user.Id,
-                FullName = user.FullName,
-                Email = user.Email,
-                ProfileImageUrl = user.ProfileImageUrl
+                Token = new TokenDto
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(double.Parse(_config["Jwt:ExpiresMinutes"]!))
+                },
+                user.FullName,
+                user.Email,
+                user.ProfileImageUrl,
+                Role = role
             });
+        }
+
+        // ✅ ADDED: Logout Endpoint
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return Ok(); // User doesn't exist, so they are effectively logged out.
+
+            // Invalidate the refresh token by clearing it
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new { Message = "Logged out successfully." });
         }
     }
 }

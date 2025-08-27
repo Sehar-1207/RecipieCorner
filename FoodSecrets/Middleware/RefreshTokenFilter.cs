@@ -26,11 +26,17 @@ namespace FoodSecrets.Middleware
                 var expires = jwt.ValidTo;
 
                 // If token expires in less than 1 minute
-                if (expires < DateTime.UtcNow.AddMinutes(1))
+                if (expires < DateTime.UtcNow.AddMinutes(1) && !string.IsNullOrEmpty(refreshToken))
                 {
-                    var newToken = _authService.RefreshTokenAsync(refreshToken).GetAwaiter().GetResult();
-                    session.SetString("AccessToken", newToken.AccessToken);
-                    session.SetString("RefreshToken", newToken.RefreshToken);
+                    var result = _authService.RefreshTokenAsync(refreshToken).GetAwaiter().GetResult();
+
+                    if (result != null && result.Token != null)
+                    {
+                        session.SetString("AccessToken", result.Token.AccessToken);
+
+                        if (!string.IsNullOrEmpty(result.Token.RefreshToken))
+                            session.SetString("RefreshToken", result.Token.RefreshToken);
+                    }
                 }
             }
         }
