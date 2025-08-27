@@ -1,8 +1,10 @@
 ﻿using FoodSecrets.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodSecrets.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class StepsController : Controller
     {
         private readonly IinstructionsService _instructionService;

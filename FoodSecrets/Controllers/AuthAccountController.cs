@@ -20,6 +20,11 @@ namespace FoodSecrets.Controllers
             _authService = authService;
             _env = env;
         }
+        [AllowAnonymous] // This ensures anyone can see the access denied page
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
         public IActionResult Register() => View();
 
         [HttpPost]

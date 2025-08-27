@@ -5,7 +5,7 @@ using RecipeCorner.Models;
 
 namespace FoodSecrets.Controllers
 {
-    [Authorize] // Only logged-in users can access create/update/delete
+    [Authorize(Roles = "Admin")] // Only logged-in users can access create/update/delete
     public class RatingUiController : Controller
     {
         private readonly ApiClientService _apiClient;

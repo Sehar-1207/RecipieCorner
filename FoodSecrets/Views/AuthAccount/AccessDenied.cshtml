@@ -1,0 +1,30 @@
+﻿@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "~/Views/Shared/_FormLayout.cshtml";
+}
+<style>
+    body{
+        background: linear-gradient(135deg, #ffb6c1, #d8b0ff, #a0e0ff);
+    }
+</style>
+<header class="text-center">
+    <h1 class="display-4 text-danger">Access Denied</h1>
+    <p class="lead">You do not have permission to view this page.</p>
+    <hr />
+</header>
+
+<div class="text-center text-info-emphasis">
+    <p>
+        The page you are trying to reach has restricted access.
+        If you believe you should have access, please contact the site administrator.
+    </p>
+    <div class="mt-2">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Go to Homepage</a>
+
+        @* Optional: Add a link to the dashboard if the user is logged in *@
+        @if (User.Identity.IsAuthenticated)
+        {
+            <a asp-controller="Dashboard" asp-action="Index" class="btn btn-secondary">Go to My Dashboard</a>
+        }
+    </div>
+</div>
