@@ -83,6 +83,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=RecipeUi}/{action=Index}/{id?}");
+    pattern: "{controller=AuthAccount}/{action=Login}/{id?}");
 
 app.Run();

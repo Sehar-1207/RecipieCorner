@@ -168,4 +168,40 @@ public class RecipeController : ControllerBase
 
         return NoContent();
     }
+
+    // GET: api/recipe/search?query=chicken
+    [HttpGet("search")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Search([FromQuery] string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return BadRequest("Search query cannot be empty.");
+        }
+
+        var recipes = await _unitOfWork.recipes.FindAsync(r =>
+            r.Name.Contains(query) ||
+            r.Description.Contains(query) ||
+            r.Cusine.Contains(query)
+        );
+
+        if (recipes == null || !recipes.Any())
+        {
+            return NotFound("No recipes found matching your search.");
+        }
+
+        var recipeDtos = recipes.Select(r => new RecipeDto
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Description = r.Description,
+            Cusine = r.Cusine,
+            MealType = r.MealType,
+            AstimatedCookingTime = r.AstimatedCokkingTime,
+            ImageUrl = r.ImageUrl
+        });
+
+        return Ok(recipeDtos);
+    }
+
 }

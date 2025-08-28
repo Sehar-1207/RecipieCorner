@@ -1,11 +1,10 @@
-﻿@{
+﻿@model IEnumerable<RecipeDto>
+@{
     ViewData["Title"] = "Recipes";
     Layout = "~/Views/Shared/_UserLayout.cshtml";
 }
-@model IEnumerable<RecipeDto>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+
 @{
-    // Get a unique, sorted list of cuisines for filtering
     var cuisines = Model
         .Select(r => r.Cusine)
         .Where(c => !string.IsNullOrEmpty(c))
@@ -14,55 +13,58 @@
 }
 
 <!-- ======================= HERO CAROUSEL & SEARCH SECTION ======================= -->
-<div id="recipeCarousel" class="carousel slide hero-section container" data-bs-ride="carousel">
-    <!-- Overlay for Darkening and Content -->
+<!-- Carousel is now full-width, with a 3-second auto-play interval -->
+<div id="recipeCarousel" class="carousel slide hero-section" data-bs-ride="carousel" data-bs-interval="3000">
     <div class="hero-overlay"></div>
     <div class="hero-content text-center text-light">
         <h1 class="display-4 text-warning fw-bold mb-4">Discover Delicious Recipes</h1>
-        <form asp-controller="Search" asp-action="Results" method="get" class="mx-auto" style="max-width: 600px;">
+        <form id="searchForm" class="mx-auto" style="max-width: 600px;">
             <div class="input-group input-group-lg">
-                <input type="text" name="query" class="form-control" placeholder="Search for ingredients or dishes..." aria-label="Search recipes">
-                <button class="btn btn-secondary" type="submit" id="button-addon2">
+                <input type="text" id="searchInput" name="query" class="form-control"
+                       placeholder="Search for ingredients or dishes..." aria-label="Search recipes">
+                <button class="btn btn-secondary" type="submit">
                     <i class="fas fa-search me-2"></i>Search
                 </button>
             </div>
         </form>
+
     </div>
 
-    <!-- Carousel Indicators (Updated to 3) -->
     <div class="carousel-indicators">
-        <button type="button" data-bs-target="#recipeCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-        <button type="button" data-bs-target="#recipeCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-        <button type="button" data-bs-target="#recipeCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        <button type="button" data-bs-target="#recipeCarousel" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#recipeCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#recipeCarousel" data-bs-slide-to="2"></button>
     </div>
 
-    <!-- Carousel Images (Updated to 3 items with 15-minute interval) -->
     <div class="carousel-inner">
-        <div class="carousel-item active" data-bs-interval="900000">
+        <!-- Removed data-bs-interval from individual items -->
+        <div class="carousel-item active">
             <img src="~/images/food/682bcf3d-47a8-420a-9198-8bf21a63e345.jpg" class="d-block w-100" alt="Delicious Pasta">
         </div>
-        <div class="carousel-item" data-bs-interval="900000">
+        <div class="carousel-item">
             <img src="~/images/food/5a7eb680-ed19-45df-b81a-5fb6f39c90f0.jpg" class="d-block w-100" alt="Fresh Salads">
         </div>
-        <div class="carousel-item" data-bs-interval="900000">
+        <div class="carousel-item">
             <img src="~/images/food/4c53d026-a2c1-44a8-b5d2-fa54f7fe816f.jpg" class="d-block w-100" alt="Hearty Soups">
         </div>
     </div>
 </div>
 
 
-<div class="container my-5">
+<div class="container wide-container my-5">
 
     <!-- ======================= CUISINE FILTER SECTION ======================= -->
     @if (cuisines.Any())
     {
         <div class="filter-section text-center mb-5">
-            <h3 class="fw-light mb-4">Or Browse by Cuisine</h3>
+            <h3 class="fw-light mb-4">Browse by Cuisine</h3>
             <div class="filter-pills">
-                <a asp-action="Index" class="filter-pill">All</a>
+                <a href="@Url.Action("Index")" class="filter-pill cuisine-filter active" data-cuisine="">All</a>
                 @foreach (var cuisine in cuisines)
                 {
-                    <a asp-action="ByCuisine" asp-route-cuisine="@cuisine" class="filter-pill">
+                    <a href="@Url.Action("ByCuisine", new { cuisine })"
+                       class="filter-pill cuisine-filter"
+                       data-cuisine="@cuisine">
                         @cuisine
                     </a>
                 }
@@ -71,204 +73,55 @@
     }
 
     <!-- ======================= RECIPE CARDS GRID ======================= -->
-    @if (Model.Any())
-    {
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            @foreach (var recipe in Model)
-            {
-                <div class="col">
-                    <div class="card recipe-card-v2 shadow-lg">
-                        <a asp-action="Details" asp-route-id="@recipe.Id" class="card-img-container">
-                            <img src="@(string.IsNullOrEmpty(recipe.ImageUrl) ? "/images/default-recipe-lg.png" : recipe.ImageUrl)" class="card-img" alt="@recipe.Name">
-                            @if (!string.IsNullOrEmpty(recipe.Cusine))
-                            {
-                                <span class="badge recipe-cuisine-badge">@recipe.Cusine</span>
-                            }
-                        </a>
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title mt-2">
-                                <a asp-action="Details" asp-route-id="@recipe.Id" class="text-decoration-none">@recipe.Name</a>
-                            </h5>
-                            <p class="card-text recipe-description flex-grow-1">@recipe.Description</p>
-                            <div class="recipe-meta-bottom mt-auto pt-3">
-                             
-                                <div class="recipe-time-info" title="Cooking Time">
-                                    <i class="fas fa-clock"></i>
-                                    <span>@recipe.AstimatedCookingTime.ToString("hh\\:mm")</span>
-                                </div>
-                                <a href="@Url.Action("Details", "Home", new { id = recipe.Id })" class="btn btn-secondary btn-sm m-2">View Recipe</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="text-center py-5">
-            <i class="fas fa-utensil-spoon fa-4x text-muted mb-3"></i>
-            <h4>No Recipes Found</h4>
-        </div>
-    }
+    <div id="recipe-list">
+        @await Html.PartialAsync("_RecipeCardsPartial", Model)
+    </div>
 </div>
 
-<!-- STYLES FOR THE NEW DESIGN -->
-<style>
-    body {
-        background-color: #f8f9fa;
-    }
+@section Scripts {
+    <link href="~/css/recipeindex.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+    <script>
+        // --- REFACTORED SCRIPT ---
+        // Combined event listeners to avoid repetition.
+        document.addEventListener("DOMContentLoaded", function () {
+            const buttons = document.querySelectorAll(".cuisine-filter");
+            const recipeList = document.getElementById("recipe-list");
+            const searchForm = document.getElementById("searchForm");
+            const searchInput = document.getElementById("searchInput");
 
-    /* Hero Section with Carousel Background */
-    .hero-section {
-        position: relative;
-        height: 80vh;
-        min-height: 400px;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 80px; /* Adjust if your navbar height is different */
-    }
+            // Cuisine filter AJAX
+            buttons.forEach(btn => {
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const cuisine = this.getAttribute("data-cuisine");
 
-    .hero-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgb(0 0 0 / 38%);
-        border-radius:20px;
-        z-index: 2;
-    }
+                    fetch(`/Home/FilterByCuisine?cuisine=${encodeURIComponent(cuisine)}`)
+                        .then(response => response.text())
+                        .then(html => {
+                            recipeList.innerHTML = html;
+                            buttons.forEach(b => b.classList.remove("active"));
+                            this.classList.add("active");
+                        })
+                        .catch(err => console.error("Error filtering recipes:", err));
+                });
+            });
 
-    .hero-content {
-        position: relative;
-        z-index: 3;
-        width: 100%;
-        max-width: 900px;
+            // Search AJAX
+            searchForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const query = searchInput.value;
 
-    }
+                fetch(`/Home/Search?query=${encodeURIComponent(query)}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        recipeList.innerHTML = html;
+                        // clear active cuisine filter since search overrides it
+                        buttons.forEach(b => b.classList.remove("active"));
+                    })
+                    .catch(err => console.error("Error searching recipes:", err));
+            });
+        });
 
-    .hero-section .carousel-inner,
-    .hero-section .carousel-item,
-    .hero-section .carousel-item img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 100%;
-        border-radius:20px;
-        object-fit: cover;
-    }
-
-    /* Filter Pills */
-    .filter-pills {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.75rem;
-    }
-
-    .filter-pill {
-        padding: 0.5rem 1.25rem;
-        background-color: #fff;
-        border: 1px solid #dee2e6;
-        color: #495057;
-        border-radius: 50px;
-        text-decoration: none;
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: all 0.2s ease-in-out;
-    }
-
-        .filter-pill:hover, .filter-pill.active {
-            background-color: #f3969a;
-            color: #fff;
-            border-color: #0d6efd;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-    /* New Recipe Card */
-    .recipe-card-v2 {
-        border: 1px solid #e9ecef;
-        border-radius: 12px;
-        background-color: #fff;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-        .recipe-card-v2:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
-        }
-
-    .card-img-container {
-        position: relative;
-        display: block;
-        border-radius: 12px 12px 0 0;
-        overflow: hidden;
-    }
-
-    .card-img {
-        height: 220px;
-        width: 100%;
-        object-fit: cover;
-        transition: transform 0.4s ease;
-    }
-
-    .recipe-card-v2:hover .card-img {
-        transform: scale(1.05);
-    }
-
-    .recipe-cuisine-badge {
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        background-color: rgba(0,0,0,0.4);
-        color: white;
-        backdrop-filter: blur(5px);
-    }
-
-    .card-title a {
-        color: #343a40;
-        text-decoration: none;
-    }
-
-        .card-title a:hover {
-            color: #f3969a;
-        }
-
-    .recipe-description {
-        font-size: 0.9rem;
-        color: #6c757d;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-height: 42px;
-    }
-
-    .recipe-meta-bottom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.85rem;
-        color: #495057;
-        border-top: 1px solid #f1f1f1;
-    }
-
-    .author-info, .recipe-time-info {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .recipe-time-info i {
-        color: #f3969a;
-    }
-</style>
+    </script>
+}

@@ -56,7 +56,15 @@ namespace FoodSecrets.Controllers
 
             await HandleSuccessfulLogin(result);
             TempData["Message"] = $"Welcome, {result.FullName}! Your account has been created.";
-            return RedirectToAction("Index", "RecipeUi");
+            // ✅ Role-based redirect
+            if (result.Roles != null && result.Roles.Contains("Admin"))
+            {
+                return RedirectToAction("Index", "RecipeUi");
+            }
+            else
+            {
+                return RedirectToAction("Index", "Home");
+            }
         }
 
         public IActionResult Login() => View();
@@ -77,7 +85,15 @@ namespace FoodSecrets.Controllers
 
             await HandleSuccessfulLogin(result);
             TempData["Message"] = $"Welcome back, {result.FullName}!";
-            return RedirectToAction("Index", "RecipeUi");
+            // ✅ Role-based redirect
+            if (result.Roles != null && result.Roles.Contains("Admin"))
+            {
+                return RedirectToAction("Index", "RecipeUi");
+            }
+            else
+            {
+                return RedirectToAction("Index", "Home");
+            }
         }
 
         // ✅ CORRECTED: More robust Logout

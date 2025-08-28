@@ -83,6 +83,19 @@ namespace FoodSecrets.Services
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<RecipeDetailsDto>(json, _jsonOptions);
         }
+        public async Task<IEnumerable<RecipeDto>> SearchAsync(string query)
+        {
+            var response = await _http.GetAsync($"api/Recipe/search?query={query}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Search recipes failed: {response.StatusCode} - {error}");
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<IEnumerable<RecipeDto>>(json, _jsonOptions) ?? Enumerable.Empty<RecipeDto>();
+        }
 
     }
 }

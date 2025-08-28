@@ -1,0 +1,42 @@
+﻿@model IEnumerable<RecipeDto>
+
+<!-- Changes are on this line: g-4 is now g-5, and row-cols-lg-4 is removed -->
+<div class="row row-cols-1 row-cols-md-3 g-5">
+    @if (Model != null && Model.Any())
+    {
+        foreach (var recipe in Model)
+        {
+            <div class="col">
+                <div class="card recipe-card-v2 h-100 shadow-lg">
+                    <a asp-action="Details" asp-route-id="@recipe.Id" class="card-img-container">
+                        <img src="@(string.IsNullOrEmpty(recipe.ImageUrl) ? "/images/default-recipe-lg.png" : recipe.ImageUrl)" class="card-img" alt="@recipe.Name">
+                        @if (!string.IsNullOrEmpty(recipe.Cusine))
+                        {
+                            <span class="badge recipe-cuisine-badge">@recipe.Cusine</span>
+                        }
+                    </a>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title mt-2">
+                            <a asp-action="Details" asp-route-id="@recipe.Id" class="text-decoration-none">@recipe.Name</a>
+                        </h5>
+                        <p class="card-text recipe-description flex-grow-1">@recipe.Description</p>
+                        <div class="recipe-meta-bottom mt-auto pt-3">
+                            <div class="recipe-time-info" title="Cooking Time">
+                                <i class="fas fa-clock"></i>
+                                <span>@recipe.AstimatedCookingTime.ToString("hh\\:mm")</span>
+                            </div>
+                            <a asp-action="Details" asp-route-id="@recipe.Id" class="btn btn-secondary btn-sm m-2">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-utensil-spoon fa-4x text-muted mb-3"></i>
+            <h4>No Recipes Found</h4>
+        </div>
+    }
+</div>
