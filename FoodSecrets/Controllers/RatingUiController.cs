@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using RecipeCorner.Dtos;
-using RecipeCorner.Models;
+using System.Security.Claims;
 
 namespace FoodSecrets.Controllers
 {
-    [Authorize(Roles = "Admin")] // Only logged-in users can access create/update/delete
+    [Authorize(Roles = "Admin, User")] // Only logged-in users can access create/update/delete
     public class RatingUiController : Controller
     {
         private readonly ApiClientService _apiClient;
@@ -160,6 +159,47 @@ namespace FoodSecrets.Controllers
             }
 
             return RedirectToAction("Index", new { recipeId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateOrUpdate([FromBody] RatingDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            dto.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            dto.UserName = User.Identity.Name;
+            dto.ProfileImageUrl = ""; // optional
+            dto.commentAt = DateTime.UtcNow;
+
+            try
+            {
+                RatingDto savedRating;
+                if (dto.Id > 0)
+                {
+                    // Update existing review
+                    savedRating = await _apiClient.PutAsync<RatingDto>($"api/Rating/{dto.Id}", dto);
+                }
+                else
+                {
+                    // Create new review
+                    savedRating = await _apiClient.PostAsync<RatingDto>("api/Rating", dto);
+                }
+
+                if (savedRating == null)
+                    return BadRequest("Failed to save rating.");
+
+                return Json(savedRating); // ✅ Return JSON explicitly
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                return Conflict("You have already submitted a review for this recipe.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error saving rating: {ex.Message}");
+            }
         }
 
     }

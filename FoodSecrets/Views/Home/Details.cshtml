@@ -1,0 +1,148 @@
+﻿@using System.Security.Claims
+@model RecipeDetailsDto
+
+@{
+    ViewData["Title"] = "Recipes ";
+     Layout = "~/Views/Shared/_UserLayout.cshtml";// A layout without extra containers is best
+
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+
+<div class="split-card-container">
+
+    <!-- LEFT PANE: Image with Overlay Content -->
+    <div class="recipe-image-pane" style="background-image: url('@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/default-recipe-lg.png" : Model.ImageUrl)');">
+        <div class="image-overlay-content">
+            <h1 class="recipe-title">@Model.Name</h1>
+            <div class="recipe-meta-bar">
+                <span class="meta-item"><i class="fas fa-utensils"></i>@Model.Cusine</span>
+                <span class="meta-item"><i class="fas fa-tag"></i>@Model.MealType</span>
+                <span class="meta-item"><i class="fas fa-clock"></i>@Model.AstimatedCookingTime.ToString("hh\\:mm")</span>
+            </div>
+            <hr class="title-divider" />
+            <p class="recipe-description">@Model.Description</p>
+        </div>
+    </div>
+
+    <!-- RIGHT PANE: Ingredients, Instructions, Reviews -->
+    <div class="recipe-content-pane">
+        <div class="text-end mb-2">
+            <a asp-action="Index" asp-controller="Home" class="btn btn-secondary text-end mx-2">Back to Recipe List</a>
+        </div>
+        <!-- NEW: Container for side-by-side columns -->
+        <div class="content-columns">
+            <div class="ingredients-column">
+                <h3>Ingredients</h3>
+                @if (Model.Ingredients != null && Model.Ingredients.Any())
+                {
+                    <ul class="ingredient-list">
+                        @foreach (var ing in Model.Ingredients)
+                        {
+                            <li><i class="fas fa-check-square"></i> @ing.Quantity @ing.Name</li>
+                        }
+                    </ul>
+                }
+            </div>
+            <div class="instructions-column">
+                <h3>Instructions</h3>
+                @if (Model.Instructions != null && Model.Instructions.Any())
+                {
+                    <ol class="instruction-list">
+                        @foreach (var step in Model.Instructions.OrderBy(i => i.Order))
+                        {
+                            <li>@step.StepInstruction</li>
+                        }
+                    </ol>
+                }
+            </div>
+        </div>
+
+
+        <!-- RATINGS & REVIEWS SECTION (remains below the columns) -->
+        <div class="reviews-section" id="reviews">
+            <h3>Ratings & Reviews</h3>
+            @if (User.Identity.IsAuthenticated)
+            {
+                var userReview = Model.Ratings?.FirstOrDefault(r => r.UserId == currentUserId);
+                <div class="card mb-4" id="review-form-card" style="background-color: var(--bg-light);">
+                    <div class="card-body">
+                        <h5 class="card-title" id="review-form-title">@(userReview == null ? "Leave a Review" : "Edit Your Review")</h5>
+                        <form id="review-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" id="recipeId" value="@Model.Id" />
+                            <input type="hidden" id="ratingId" value="@(userReview?.Id ?? 0)" />
+
+                            <div class="mb-2">
+                                <label class="form-label d-block">Your Rating:</label>
+                                <div id="rating-stars-input" class="rating-stars interactive">
+                                    <i class="far fa-star" data-value="1"></i><i class="far fa-star" data-value="2"></i><i class="far fa-star" data-value="3"></i><i class="far fa-star" data-value="4"></i><i class="far fa-star" data-value="5"></i>
+                                </div>
+                                <input type="hidden" id="starsValue" value="@(userReview?.Stars ?? 0)" />
+                            </div>
+                            <div class="mb-3">
+                                <textarea id="comment" class="form-control" rows="2" placeholder="Share your thoughts...">@(userReview?.Comment)</textarea>
+                            </div>
+                            <div class="d-flex justify-content-end align-items-center">
+                                <span id="review-form-message" class="me-3"></span>
+                                <button type="submit" class="btn btn-primary btn-sm">Submit Review</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-light border">
+                    <a asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="@Context.Request.Path">Login</a> to leave a review.
+                </div>
+            }
+
+            <div id="review-list">
+                @if (Model.Ratings != null && Model.Ratings.Any())
+                {
+                    @foreach (var r in Model.Ratings.OrderByDescending(rating => rating.commentAt))
+                    {
+                        <div class="review-item" data-rating-id="@r.Id">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="review-author">
+                                    <img src="@(string.IsNullOrEmpty(r.ProfileImageUrl) ? "/images/default-author.png" : r.ProfileImageUrl)" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;" alt="User">
+                                    <div>
+                                        <strong>
+                                            @r.UserName
+                                            @if (r.UserId == currentUserId)
+                                            {
+                                                <span class="badge bg-success ms-1 fw-normal">You</span>
+                                            }
+                                        </strong>
+                                        <div class="text-muted" style="font-size: 0.85rem;">@r.commentAt.ToString("MMMM dd, yyyy")</div>
+                                    </div>
+                                </div>
+                                <span class="rating-stars text-warning">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fa-star @(i <= r.Stars ? "fas" : "far")"></i>
+                                    }
+                                </span>
+                            </div>
+                            <p class="mb-0 mt-2 review-comment">@r.Comment</p>
+                        </div>
+                    }
+
+                }
+                else
+                {
+                    <div id="no-reviews-message" class="text-center p-4">
+                        <p class="mb-0 text-muted">Be the first to rate this recipe!</p>
+                    </div>
+                }
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+    <link href="~/css/userrecipedetail.css" rel="stylesheet" /><script src="~/js/rating.js"></script>
+}
