@@ -14,7 +14,7 @@
 @{
     var isAdmin = User.IsInRole("Admin");
 }
-<div class="container-fluid mt-5 justify-content-center align-content-center">
+<div class="container mt-5 justify-content-center align-content-center">
 
     <div class="card border-0 shadow-lg mt-5">
     @if (TempData["SuccessMessage"] != null)
@@ -30,22 +30,25 @@
         </div>
         <div class="card-body p-4">
             <form asp-action="Settings" method="post" enctype="multipart/form-data">
-                @* This hidden field is important to retain the existing image URL if no new file is chosen *@
                 <input type="hidden" asp-for="ProfileImageUrl" />
 
                 <div class="row">
                     <!-- Left Column: Profile Picture -->
                     <div class="col-md-4 text-center">
-                        <img src="@Model.ProfileImageUrl"
+                        <img src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/images/default-avatar.png" : Model.ProfileImageUrl)"
                              alt="Profile Image"
                              id="profileImagePreview"
                              class="rounded-circle mb-3"
                              style="width: 150px; height: 150px; object-fit: cover; border: 4px solid #f8f9fa;" />
 
+                        <!-- This file input is hidden and triggered by the label -->
                         <input asp-for="ProfileImage" type="file" accept="image/*" class="d-none" id="ProfileImage" />
+
                         <p class="text-muted small mt-2">JPG, GIF or PNG. 1MB max.</p>
-                        <label for="ProfileImage" class="btn btn-secondary btn-sm">
-                            <i class="bi bi-upload me-2"></i>Change Picture
+
+                        <!-- This label acts as the visible button for the file input -->
+                        <label for="ProfileImage" class="btn btn-outline-primary">
+                            Change Picture
                         </label>
                     </div>
 
@@ -59,20 +62,21 @@
 
                         <div class="mb-4">
                             <label asp-for="Email" class="form-label fw-bold">Email</label>
-                            <input asp-for="Email" class="form-control" disabled />
+                            <!-- ✅ FIXED: Changed disabled to readonly -->
+                            <input asp-for="Email" class="form-control bg-light" readonly />
                             <small class="form-text text-muted">Your email address is linked to your account and cannot be changed.</small>
                         </div>
 
                         <hr class="my-4">
 
                         <div class="text-end">
-                            <button type="submit" class="btn btn-primary px-4 py-2">Save Changes</button>
+                            <!-- ✅ IMPROVED: Button styles to match screenshot -->
+                            <button type="submit" class="btn btn-success px-4 py-2">Save Changes</button>
                             <a asp-action="Index"
-                            asp-controller="@(isAdmin ? "RecipeUi" : "Home")"
-                            class="btn btn-outline-secondary">
-                            Cancel
+                               asp-controller="@(isAdmin ? "RecipeUi" : "Home")"
+                               class="btn btn-light border">
+                                Cancel
                             </a>
-
                         </div>
                     </div>
                 </div>

@@ -138,28 +138,37 @@ namespace FoodSecrets.Controllers
             return View(rating);
         }
 
-        // ✅ POST: Delete confirmed
+        // POST: Delete confirmed (This method is already perfect)
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id, int recipeId)
+        public async Task<IActionResult> DeleteConfirmed(RatingDto dto)
         {
             try
             {
-                var success = await _apiClient.DeleteAsync($"api/Rating/{id}");
-                if (!success)
-                {
-                    ModelState.AddModelError("", "Failed to delete rating");
-                    return RedirectToAction("Delete", new { id });
-                }
+                await _apiClient.DeleteAsync($"api/Rating/{dto.Id}");
             }
             catch (HttpRequestException ex)
             {
-                ModelState.AddModelError("", $"Error: {ex.Message}");
-                return RedirectToAction("Delete", new { id });
+                if (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    TempData["ErrorMessage"] = "You do not have permission to delete this rating.";
+                }
+                else if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    TempData["ErrorMessage"] = "The rating you tried to delete was not found.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+                }
+                // On failure, redirect back to the recipe page, not the delete confirmation.
+                return RedirectToAction("Details", "RecipeUi", new { id = dto.RecipeId });
             }
 
-            return RedirectToAction("Index", new { recipeId });
+            TempData["SuccessMessage"] = "Rating deleted successfully.";
+            return RedirectToAction("Details", "RecipeUi", new { id = dto.RecipeId });
         }
+        
 
         [HttpPost]
         [ValidateAntiForgeryToken]

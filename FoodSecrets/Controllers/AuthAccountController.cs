@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RecipeCorner.Dtos;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -83,18 +84,23 @@ namespace FoodSecrets.Controllers
                 return View(dto);
             }
 
+            // Extract roles directly from JWT
+            var roles = ExtractRolesFromJwt(result.Token.AccessToken);
+
             await HandleSuccessfulLogin(result);
             TempData["Message"] = $"Welcome back, {result.FullName}!";
-            // ✅ Role-based redirect
-            if (result.Roles != null && result.Roles.Contains("Admin"))
+
+            // ✅ Role-based redirect using roles list
+            if (roles.Contains("Admin"))
             {
-                return RedirectToAction("Index", "RecipeUi");
+                return RedirectToAction("Index", "RecipeUi"); // Admin dashboard
             }
             else
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Home"); // User dashboard
             }
         }
+
 
         // ✅ CORRECTED: More robust Logout
         [HttpPost]
@@ -106,34 +112,21 @@ namespace FoodSecrets.Controllers
             return RedirectToAction("Login", "AuthAccount");
         }
 
-        [Authorize] // Ensures only logged-in users can see this
+        // In FoodSecrets/Controllers/AuthAccountController.cs
+
+        [Authorize]
         [HttpGet]
-        public async Task<IActionResult> Settings()
+        public IActionResult Settings()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return RedirectToAction("Login", "AuthAccount");
-            }
-
-            var currentUser = await _authService.GetUserDetailsAsync(userId);
-            if (currentUser == null)
-            {
-                // This could happen if the API is down or token is invalid.
-                // Log them out to be safe.
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                TempData["ErrorMessage"] = "Your session has expired. Please log in again.";
-                return RedirectToAction("Login", "AuthAccount");
-            }
-
+            // This is the correct, reliable, and efficient way to get user details for the view.
+            // It reads directly from the user's authenticated claims cookie, which is the
+            // "source of truth" for the current session and avoids potential race conditions
+            // from re-fetching data from the API immediately after an update.
             var model = new UpdateProfile
             {
-                FullName = currentUser.FullName ?? string.Empty,
-                Email = currentUser.Email ?? string.Empty,
-                // Use a default image if none is set
-                ProfileImageUrl = !string.IsNullOrEmpty(currentUser.ProfileImageUrl)
-                                    ? currentUser.ProfileImageUrl
-                                    : "/images/student-avatar.jpg"
+                FullName = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty,
+                Email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty,
+                ProfileImageUrl = User.FindFirstValue("ProfileImageUrl") ?? "/images/student-avatar.jpg"
             };
 
             return View(model);
@@ -142,65 +135,87 @@ namespace FoodSecrets.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Settings(UpdateProfile dto, IFormFile? ProfileImage)
+        public async Task<IActionResult> Settings(IFormFile? ProfileImage) // Note: We only need the file from the form directly
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            // We must re-populate the ProfileImageUrl for the view if validation fails
-            if (!ModelState.IsValid)
+            if (string.IsNullOrEmpty(userId))
             {
-                var currentUser = await _authService.GetUserDetailsAsync(userId);
-                dto.ProfileImageUrl = currentUser?.ProfileImageUrl ?? "/images/student-avatar.jpg";
-                return View(dto);
+                return Unauthorized();
             }
+
+            // STEP 1: Fetch the user's current data to create a valid base model.
+            // This pre-populates the model with data that isn't on the form, like the Email.
+            var modelToUpdate = new UpdateProfile
+            {
+                Email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty,
+                ProfileImageUrl = User.FindFirstValue("ProfileImageUrl") ?? "/images/student-avatar.jpg"
+            };
+
+            // STEP 2: Explicitly bind ONLY the editable form fields to your model.
+            // This prevents validation errors on fields like 'Email' that aren't being changed.
+            // 'TryUpdateModelAsync' is perfect for this. It updates 'modelToUpdate.FullName' from the form.
+            if (!await TryUpdateModelAsync(modelToUpdate, "", m => m.FullName))
+            {
+                // If binding or validation of FullName fails, return the view.
+                // The model is already correctly populated with the original data.
+                return View(modelToUpdate);
+            }
+
+            // If we reach here, ModelState is VALID for the fields we updated.
 
             string? newImagePath = null;
 
-            // Handle new profile image upload
+            // STEP 3: Handle the file upload (your existing logic is good).
             if (ProfileImage != null)
             {
+                var oldImagePath = modelToUpdate.ProfileImageUrl; // Use the path from our model
                 var uploadsFolder = Path.Combine(_env.WebRootPath, "images", "users");
-                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-
-                var fileName = $"{Guid.NewGuid()}_{ProfileImage.FileName}";
+                Directory.CreateDirectory(uploadsFolder);
+                var fileName = $"{Guid.NewGuid()}_{Path.GetExtension(ProfileImage.FileName)}";
                 var filePath = Path.Combine(uploadsFolder, fileName);
+
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await ProfileImage.CopyToAsync(stream);
                 }
+
                 newImagePath = $"/images/users/{fileName}";
 
-                // Delete old image if it exists and is not the default one
-                var currentUser = await _authService.GetUserDetailsAsync(userId);
-                if (!string.IsNullOrEmpty(currentUser?.ProfileImageUrl) && !currentUser.ProfileImageUrl.Contains("student-avatar.jpg"))
+                // Delete old image
+                if (!string.IsNullOrEmpty(oldImagePath) && !oldImagePath.Contains("student-avatar.jpg"))
                 {
-                    var oldPath = Path.Combine(_env.WebRootPath, currentUser.ProfileImageUrl.TrimStart('/'));
-                    if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+                    var oldFullPath = Path.Combine(_env.WebRootPath, oldImagePath.TrimStart('/'));
+                    if (System.IO.File.Exists(oldFullPath))
+                    {
+                        System.IO.File.Delete(oldFullPath);
+                    }
                 }
             }
 
-            // Set the image URL in the DTO to be sent to the API
-            // If a new image was uploaded, use its path. Otherwise, this will be null,
-            // and the API will know not to update the image URL.
-            dto.ProfileImageUrl = newImagePath;
+            // STEP 4: Prepare the final object for the API call.
+            modelToUpdate.ProfileImageUrl = newImagePath; // This will be null if no new image was uploaded
 
-            var updateResult = await _authService.UpdateProfileAsync(userId, dto);
+            // STEP 5: Call the service with the fully valid and updated model.
+            var updateResult = await _authService.UpdateProfileAsync(userId, modelToUpdate);
 
             if (updateResult == null || updateResult.Token == null)
             {
                 ModelState.AddModelError("", "Failed to update profile. Please try again.");
-                var currentUser = await _authService.GetUserDetailsAsync(userId);
-                dto.ProfileImageUrl = currentUser?.ProfileImageUrl ?? "/images/student-avatar.jpg";
-                return View(dto);
+                return View(modelToUpdate); // Return the model we've been working with
             }
 
-            // Re-authenticate with the new token and claims
+            // STEP 6: Ensure the response object has the new image path before refreshing the cookie.
+            if (!string.IsNullOrEmpty(newImagePath))
+            {
+                updateResult.ProfileImageUrl = newImagePath;
+            }
+
+            // STEP 7: Re-authenticate to update claims in the cookie.
             await HandleSuccessfulLogin(updateResult);
+
             TempData["SuccessMessage"] = "Profile updated successfully!";
             return RedirectToAction("Settings");
         }
-
         private async Task HandleSuccessfulLogin(AuthResponseDto result)
         {
             var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(result.Token.AccessToken);

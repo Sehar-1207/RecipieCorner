@@ -1,10 +1,12 @@
 ﻿using FoodSecrets.Models;
 using FoodSecrets.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
 namespace FoodSecrets.Controllers
 {
+    [Authorize(Roles = "User")]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -80,35 +82,44 @@ namespace FoodSecrets.Controllers
 
             return PartialView("_RecipeCardsPartial", recipes);
         }
+
+        // AJAX or full page search
         public async Task<IActionResult> Search(string query)
         {
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                return RedirectToAction(nameof(Index));
-            }
+            var recipes = string.IsNullOrWhiteSpace(query)
+                ? await _recipeService.GetAllAsync()
+                : await _recipeService.SearchAsync(query);
 
-            var recipes = await _recipeService.SearchAsync(query);
-
-            // If AJAX call → return partial view
+            // ✅ If AJAX → only return partial
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return PartialView("_RecipeCardsPartial", recipes);
             }
 
-            // Otherwise reload full page with results
-            ViewBag.Cuisines = recipes
+            // Otherwise reload full page
+            var allRecipes = await _recipeService.GetAllAsync();
+            var cuisines = allRecipes
                 .Select(r => r.Cusine)
                 .Where(c => !string.IsNullOrWhiteSpace(c))
                 .Distinct()
                 .OrderBy(c => c)
                 .ToList();
 
+            ViewBag.Cuisines = cuisines;
             ViewBag.ActiveCuisine = null;
             ViewBag.SearchQuery = query;
 
             return View("Index", recipes);
         }
+        public async Task<IActionResult> SearchRecipes(string query)
+        {
+            var recipes = string.IsNullOrWhiteSpace(query)
+                ? await _recipeService.GetAllAsync()
+                : await _recipeService.SearchAsync(query);
 
+            // This will only return the HTML for the recipe cards.
+            return PartialView("_RecipeCardsPartial", recipes);
+        }
         // Error page
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

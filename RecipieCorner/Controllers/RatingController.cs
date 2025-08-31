@@ -84,16 +84,32 @@ namespace RecipeCorner.Controllers
         [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
+            // 1. Find the rating in the database.
             var rating = await _unitOfWork.rating.GetByIdWithIncludeAsync(id, r => r.User);
-            if (rating == null) return NotFound();
+            if (rating == null)
+            {
+                return NotFound();
+            }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (rating.UserId != userId) return Forbid();
+            // 2. Get the current user's ID and check if they are an Admin.
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isCurrentUserAdmin = User.IsInRole("Admin");
 
+            // 3. ✅ THE FIX IS HERE: The Security Check
+            // Block the action ONLY IF the user is NOT the owner AND is NOT an Admin.
+            if (rating.UserId != currentUserId && !isCurrentUserAdmin)
+            {
+                // This returns a 403 Forbidden error if a regular user tries to
+                // delete a rating that does not belong to them.
+                return Forbid();
+            }
+
+            // 4. If the check passes, delete the rating.
             _unitOfWork.rating.Delete(rating);
             await _unitOfWork.SaveAsync();
 
-            return Ok(ToDto(rating));
+            // 5. Return a 204 No Content response, which is the standard for a successful DELETE.
+            return NoContent();
         }
 
         [HttpPost]

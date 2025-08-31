@@ -24,7 +24,7 @@
         @* Optional: Add a link to the dashboard if the user is logged in *@
         @if (User.Identity.IsAuthenticated)
         {
-            <a asp-controller="Dashboard" asp-action="Index" class="btn btn-secondary">Go to My Dashboard</a>
+            <a asp-controller="AuthAccount" asp-action="Login" class="btn btn-secondary">Go Back</a>
         }
     </div>
 </div>

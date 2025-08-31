@@ -80,9 +80,11 @@
                             }
 
                             <!-- Form for deletion -->
-                            <form asp-action="Delete" method="post" class="mt-4">
+                            <form asp-action="Delete" asp-controller="RatingUi" method="post" class="mt-4">
+                                @Html.AntiForgeryToken() <!-- Make sure the token is here! -->
                                 <input type="hidden" asp-for="Id" />
-                                <input type="hidden" name="recipeId" value="@Model.RecipeId" />
+                                <input type="hidden" asp-for="RecipeId" /> <!-- Use the tag helper for consistency -->
+                                <!-- ... rest of form ... -->
 
                                 <div class="d-flex justify-content-end gap-2">
                                     <a asp-controller="RecipeUi" asp-action="Details" asp-route-id="@Model.RecipeId" class="btn btn-secondary px-4">
@@ -91,8 +93,8 @@
                                     <button type="submit" class="btn btn-danger btn-pulse px-4">
                                         <i class="fas fa-trash-alt me-2"></i> Confirm
                                     </button>
-                                </div>
                             </form>
+
                         </div>
                     </div>
 
@@ -105,5 +107,6 @@
 
 @section Scripts {
     <!-- Font Awesome for icons -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 }

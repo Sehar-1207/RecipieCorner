@@ -78,50 +78,34 @@
     </div>
 </div>
 
+<!-- In Views/Home/Index.cshtml -->
 @section Scripts {
     <link href="~/css/recipeindex.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
     <script>
-        // --- REFACTORED SCRIPT ---
-        // Combined event listeners to avoid repetition.
         document.addEventListener("DOMContentLoaded", function () {
-            const buttons = document.querySelectorAll(".cuisine-filter");
-            const recipeList = document.getElementById("recipe-list");
+            // ... (your existing code for cuisine filter)
+
             const searchForm = document.getElementById("searchForm");
             const searchInput = document.getElementById("searchInput");
-
-            // Cuisine filter AJAX
-            buttons.forEach(btn => {
-                btn.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    const cuisine = this.getAttribute("data-cuisine");
-
-                    fetch(`/Home/FilterByCuisine?cuisine=${encodeURIComponent(cuisine)}`)
-                        .then(response => response.text())
-                        .then(html => {
-                            recipeList.innerHTML = html;
-                            buttons.forEach(b => b.classList.remove("active"));
-                            this.classList.add("active");
-                        })
-                        .catch(err => console.error("Error filtering recipes:", err));
-                });
-            });
+            const recipeList = document.getElementById("recipe-list");
 
             // Search AJAX
             searchForm.addEventListener("submit", function (e) {
                 e.preventDefault();
                 const query = searchInput.value;
 
-                fetch(`/Home/Search?query=${encodeURIComponent(query)}`)
+                // --- CHANGE THIS LINE ---
+                // Point the fetch request to the new 'SearchRecipes' action
+                fetch(`/Home/SearchRecipes?query=${encodeURIComponent(query)}`)
                     .then(response => response.text())
                     .then(html => {
                         recipeList.innerHTML = html;
                         // clear active cuisine filter since search overrides it
-                        buttons.forEach(b => b.classList.remove("active"));
+                        document.querySelectorAll(".cuisine-filter").forEach(b => b.classList.remove("active"));
                     })
                     .catch(err => console.error("Error searching recipes:", err));
             });
         });
-
     </script>
 }
