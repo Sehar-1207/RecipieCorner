@@ -4,7 +4,7 @@ using System.Security.Claims;
 
 namespace FoodSecrets.Controllers
 {
-    [Authorize(Roles = "Admin, User")] // Only logged-in users can access create/update/delete
+    [Authorize(Roles = "Admin")] 
     public class RatingUiController : Controller
     {
         private readonly ApiClientService _apiClient;
@@ -14,7 +14,7 @@ namespace FoodSecrets.Controllers
             _apiClient = apiClient;
         }
 
-        // ✅ List ratings for a recipe (anyone can view)
+        // ✅ List ratings for a recipe 
         [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> Index(int recipeId)
@@ -128,7 +128,6 @@ namespace FoodSecrets.Controllers
         }
 
 
-        // ✅ GET: Delete confirmation page
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
@@ -138,7 +137,7 @@ namespace FoodSecrets.Controllers
             return View(rating);
         }
 
-        // POST: Delete confirmed (This method is already perfect)
+        // POST: Delete confirmed 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(RatingDto dto)

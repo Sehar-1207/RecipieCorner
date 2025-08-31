@@ -1,5 +1,4 @@
 ﻿using FoodSecrets.Models;
-using FoodSecrets.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -101,27 +100,19 @@ namespace FoodSecrets.Controllers
             }
         }
 
-
-        // ✅ CORRECTED: More robust Logout
         [HttpPost]
         public async Task<IActionResult> Logout()
         {
-            await _authService.LogoutAsync(); // Call API to invalidate refresh token
+            await _authService.LogoutAsync(); 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
             return RedirectToAction("Login", "AuthAccount");
         }
 
-        // In FoodSecrets/Controllers/AuthAccountController.cs
-
         [Authorize]
         [HttpGet]
         public IActionResult Settings()
         {
-            // This is the correct, reliable, and efficient way to get user details for the view.
-            // It reads directly from the user's authenticated claims cookie, which is the
-            // "source of truth" for the current session and avoids potential race conditions
-            // from re-fetching data from the API immediately after an update.
             var model = new UpdateProfile
             {
                 FullName = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty,
@@ -135,7 +126,7 @@ namespace FoodSecrets.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Settings(IFormFile? ProfileImage) // Note: We only need the file from the form directly
+        public async Task<IActionResult> Settings(IFormFile? ProfileImage) 
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -143,21 +134,14 @@ namespace FoodSecrets.Controllers
                 return Unauthorized();
             }
 
-            // STEP 1: Fetch the user's current data to create a valid base model.
-            // This pre-populates the model with data that isn't on the form, like the Email.
             var modelToUpdate = new UpdateProfile
             {
                 Email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty,
                 ProfileImageUrl = User.FindFirstValue("ProfileImageUrl") ?? "/images/student-avatar.jpg"
             };
 
-            // STEP 2: Explicitly bind ONLY the editable form fields to your model.
-            // This prevents validation errors on fields like 'Email' that aren't being changed.
-            // 'TryUpdateModelAsync' is perfect for this. It updates 'modelToUpdate.FullName' from the form.
             if (!await TryUpdateModelAsync(modelToUpdate, "", m => m.FullName))
             {
-                // If binding or validation of FullName fails, return the view.
-                // The model is already correctly populated with the original data.
                 return View(modelToUpdate);
             }
 
@@ -165,10 +149,10 @@ namespace FoodSecrets.Controllers
 
             string? newImagePath = null;
 
-            // STEP 3: Handle the file upload (your existing logic is good).
+          
             if (ProfileImage != null)
             {
-                var oldImagePath = modelToUpdate.ProfileImageUrl; // Use the path from our model
+                var oldImagePath = modelToUpdate.ProfileImageUrl; 
                 var uploadsFolder = Path.Combine(_env.WebRootPath, "images", "users");
                 Directory.CreateDirectory(uploadsFolder);
                 var fileName = $"{Guid.NewGuid()}_{Path.GetExtension(ProfileImage.FileName)}";
@@ -181,7 +165,6 @@ namespace FoodSecrets.Controllers
 
                 newImagePath = $"/images/users/{fileName}";
 
-                // Delete old image
                 if (!string.IsNullOrEmpty(oldImagePath) && !oldImagePath.Contains("student-avatar.jpg"))
                 {
                     var oldFullPath = Path.Combine(_env.WebRootPath, oldImagePath.TrimStart('/'));
@@ -192,25 +175,21 @@ namespace FoodSecrets.Controllers
                 }
             }
 
-            // STEP 4: Prepare the final object for the API call.
-            modelToUpdate.ProfileImageUrl = newImagePath; // This will be null if no new image was uploaded
+            modelToUpdate.ProfileImageUrl = newImagePath; 
 
-            // STEP 5: Call the service with the fully valid and updated model.
             var updateResult = await _authService.UpdateProfileAsync(userId, modelToUpdate);
 
             if (updateResult == null || updateResult.Token == null)
             {
                 ModelState.AddModelError("", "Failed to update profile. Please try again.");
-                return View(modelToUpdate); // Return the model we've been working with
+                return View(modelToUpdate); 
             }
 
-            // STEP 6: Ensure the response object has the new image path before refreshing the cookie.
             if (!string.IsNullOrEmpty(newImagePath))
             {
                 updateResult.ProfileImageUrl = newImagePath;
             }
 
-            // STEP 7: Re-authenticate to update claims in the cookie.
             await HandleSuccessfulLogin(updateResult);
 
             TempData["SuccessMessage"] = "Profile updated successfully!";
