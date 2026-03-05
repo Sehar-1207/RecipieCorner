@@ -205,6 +205,3 @@ I welcome contributions to improve RecipeCorner! Whether you're fixing a bug in 
 ---
 
 <p align="center">Made with ❤️ by the Sehar Ajmal.</p>
-<p align="center">
-  <a href="#">⬆️ Back to Top</a>
-</p>
